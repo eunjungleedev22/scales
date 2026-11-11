@@ -26,6 +26,10 @@ export interface VirtualPianoProps {
   /** Force-show/hide labels; defaults to the user setting */
   showNames?: boolean;
   label?: string;
+  /** Small text labels drawn on specific keys (e.g. "W", "H", "R") */
+  badges?: Record<number, string>;
+  /** Visual height variant */
+  compact?: boolean;
 }
 
 const MARK_STYLE: Record<KeyMark, { bg?: string; ring?: string }> = {
@@ -50,6 +54,8 @@ export function VirtualPiano({
   className,
   showNames,
   label = "Piano keyboard",
+  badges,
+  compact,
 }: VirtualPianoProps) {
   const settings = useSettings();
   const names = showNames ?? settings.showNoteNames;
@@ -155,6 +161,11 @@ export function VirtualPiano({
         )}
         style={{ ...style, touchAction: "manipulation" }}
       >
+        {badges?.[m] && (
+          <span className={cn("absolute left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-pink px-1 text-[10px] font-black text-white shadow", black ? "top-[45%]" : "top-[52%]")}>
+            {badges[m]}
+          </span>
+        )}
         {(mark === "right" || mark === "wrong") && (
           <span aria-hidden className={cn("absolute left-1/2 top-[38%] -translate-x-1/2 rounded-full px-1 text-xs font-black", mark === "right" ? "bg-[#1a1428] text-lime" : "bg-[#1a1428] text-[#ff4d6d]")}>
             {mark === "right" ? "✓" : "✕"}
@@ -171,7 +182,7 @@ export function VirtualPiano({
   return (
     <div className={cn("w-full", className)}>
       <div className="no-scrollbar overflow-x-auto rounded-2xl">
-        <div role="group" aria-label={label} className="relative flex h-40 sm:h-48 md:h-52" style={{ minWidth: `${whites.length * 25}px` }}>
+        <div role="group" aria-label={label} className={cn("relative flex", compact ? "h-32 sm:h-36" : "h-40 sm:h-48 md:h-52")} style={{ minWidth: `${whites.length * 25}px` }}>
           {whites.map((m) => renderKey(m, false, 0))}
           {keys
             .filter((m) => isBlackKey(m))

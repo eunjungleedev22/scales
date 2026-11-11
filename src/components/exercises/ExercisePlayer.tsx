@@ -23,6 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Cat } from "@/components/mascot/Cat";
 import { cn } from "@/lib/utils";
+import { GlossaryText } from "@/components/glossary/GlossaryText";
+import { loc } from "@/lib/exercises/types";
 
 export interface ExerciseOutcome {
   correct: boolean;
@@ -118,7 +120,9 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
       <div className="flex items-start gap-3">
         <Cat mood={mood} size={64} className="shrink-0" />
         <div className="relative flex-1 rounded-3xl rounded-tl-md border-2 border-border bg-card px-4 py-3">
-          <h2 className="text-lg font-black leading-snug sm:text-xl">{L(exercise.prompt)}</h2>
+          <h2 className="text-lg font-black leading-snug sm:text-xl">
+            <GlossaryText text={exercise.prompt} />
+          </h2>
           {boss && <span className="text-xs font-bold uppercase tracking-wider text-pink">Boss challenge · 2× XP</span>}
         </div>
       </div>
@@ -130,7 +134,7 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
         {showHint && hint && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0 }} className="rounded-2xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm">
             <span className="font-black text-primary">💡 {t("hint")}: </span>
-            {L(hint)}
+            <GlossaryText text={hint} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -152,7 +156,7 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
           >
             <p className={cn("text-lg font-black", evaluation.status === "correct" ? "text-lime" : evaluation.status === "creative" ? "text-primary" : "text-destructive")}>
               {evaluation.status === "correct" ? "🎉 " : evaluation.status === "creative" ? "🎨 " : "🙀 "}
-              {L(evaluation.message)}
+              {loc(evaluation.message, "en")}
             </p>
             {evaluation.details.length > 0 && (
               <div className="mt-2">
@@ -161,7 +165,9 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
                   {evaluation.details.map((d, i) => (
                     <li key={i} className="flex gap-2">
                       <span className="text-muted-foreground">•</span>
-                      <span>{L(d)}</span>
+                      <span>
+                        <GlossaryText text={d} />
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -170,7 +176,7 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
             {evaluation.correct && exercise.production && (
               <p className="mt-3 rounded-2xl bg-background/50 px-3 py-2 text-sm">
                 <span className="font-black text-pink">🎛️ {t("inTheStudio")}: </span>
-                {L(exercise.production)}
+                <GlossaryText text={exercise.production} />
               </p>
             )}
           </motion.div>
@@ -434,7 +440,7 @@ function ChoiceBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps) {
               )}
             >
               <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs">{i + 1}</span>
-              {L(o)}
+              {loc(o, "en")}
             </motion.button>
           );
         })}

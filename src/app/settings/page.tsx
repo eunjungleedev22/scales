@@ -31,6 +31,9 @@ export default function SettingsPage() {
               <option value="ko">한국어</option>
             </NativeSelect>
           </Row>
+          <Row label="Korean term hints (semitone 반음, whole tone 온음…)" id="koterms">
+            <Switch id="koterms" checked={s.koreanTerms} onCheckedChange={(v) => s.set({ koreanTerms: v })} />
+          </Row>
           <Row label={t("showNoteNames")} id="names">
             <Switch id="names" checked={s.showNoteNames} onCheckedChange={(v) => s.set({ showNoteNames: v })} />
           </Row>

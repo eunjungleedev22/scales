@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, X } from "lucide-react";
+import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay } from "lucide-react";
 import type { Lesson } from "@/content/curriculum";
 import { getWorld, nextLesson } from "@/content/curriculum";
 import { instantiate } from "@/lib/exercises/instantiate";
@@ -16,6 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Kbd } from "@/components/ui/kbd";
 import { Cat } from "@/components/mascot/Cat";
+import { IntroPlayer } from "@/components/lesson/IntroPlayer";
+import { GlossaryText, KeyTerms } from "@/components/glossary/GlossaryText";
+import { introFor, youtubeSearchUrl } from "@/content/intros";
+import { termsIn } from "@/content/glossary";
+import { loc } from "@/lib/exercises/types";
 import { cn } from "@/lib/utils";
 
 type Phase = "intro" | "exercises" | "done";
@@ -32,6 +37,14 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
   const xpAtStart = useRef(0);
   const progress = useProgress();
   const [bonus, setBonus] = useState(0);
+  const [showIntro, setShowIntro] = useState(false);
+  const en = (x: Parameters<typeof loc>[0]) => loc(x, "en");
+  const scenes = useMemo(() => introFor(lesson, en), [lesson]); // eslint-disable-line react-hooks/exhaustive-deps
+  const keyTerms = useMemo(
+    () => termsIn([...lesson.concept.map(en), ...scenes.map((sc) => sc.text), en(lesson.production)]).slice(0, 8),
+    [lesson, scenes], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const ytQuery = `${en(lesson.title).replace(/^Boss: .*/, en(world.title))} music theory${lesson.worldId >= 5 ? " electronic music production" : ""}`;
 
   useEffect(() => {
     progress.setLastLesson(lesson.id);
@@ -63,7 +76,10 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
   // Keyboard: Enter starts, Escape exits
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") router.push("/learn");
+      if (e.key === "Escape") {
+        if (showIntro) return setShowIntro(false);
+        router.push("/learn");
+      }
       if (phase === "intro" && e.key === "Enter") {
         e.preventDefault();
         start();
@@ -82,6 +98,31 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
       <span className="text-xs font-bold text-muted-foreground">
         {phase === "exercises" ? `${index + 1}/${exercises.length}` : ""}
       </span>
+      {phase === "exercises" && (
+        <Button variant="secondary" size="sm" onClick={() => setShowIntro(true)}>
+          <Tv /> Intro
+        </Button>
+      )}
+    </div>
+  );
+
+  const introModal = showIntro && (
+    <div role="dialog" aria-modal="true" aria-label="Lesson intro" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={() => setShowIntro(false)}>
+      <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-2 flex justify-end">
+          <button onClick={() => setShowIntro(false)} aria-label="Close intro" className="rounded-full bg-secondary p-2">
+            <X className="size-5" />
+          </button>
+        </div>
+        <IntroPlayer scenes={scenes} title={en(lesson.title)} />
+        <ul className="mt-3 space-y-1 rounded-2xl bg-card p-4 text-sm">
+          {lesson.concept.map((c, i) => (
+            <li key={i}>
+              ▸ <GlossaryText text={c} />
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 
@@ -98,31 +139,46 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
               </p>
               <h1 className="flex items-center gap-2 text-3xl font-black">
                 {lesson.boss && <Crown className="size-7 text-pink" />}
-                {L(lesson.title)}
+                {en(lesson.title)}
               </h1>
             </div>
           </div>
+          <IntroPlayer scenes={scenes} title={en(lesson.title)} />
           <div className="rounded-3xl border-2 border-border bg-card p-5">
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("concept")}</p>
             <ul className="space-y-2">
               {lesson.concept.map((c, i) => (
                 <li key={i} className="flex gap-2 text-base font-semibold">
-                  <span style={{ color: world.color }}>▸</span> {L(c)}
+                  <span style={{ color: world.color }}>▸</span>
+                  <span>
+                    <GlossaryText text={c} />
+                  </span>
                 </li>
               ))}
             </ul>
             {lesson.demo && (
               <Button variant="pink" className="mt-4" onClick={() => playCue(lesson.demo!.cue)}>
-                <Play /> {t("demo")}: {L(lesson.demo.label)}
+                <Play /> {t("demo")}: {en(lesson.demo.label)}
               </Button>
             )}
           </div>
+          {keyTerms.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Key terms · <span lang="ko">핵심 용어</span>
+              </p>
+              <KeyTerms entries={keyTerms} />
+            </div>
+          )}
           {lesson.production && (
             <p className="rounded-2xl bg-secondary px-4 py-3 text-sm">
               <span className="font-black text-pink">🎛️ {t("inTheStudio")}: </span>
-              {L(lesson.production)}
+              <GlossaryText text={lesson.production} />
             </p>
           )}
+          <a href={youtubeSearchUrl(ytQuery)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground">
+            <MonitorPlay className="size-4 text-[#ff4d6d]" /> More video lessons on YouTube: “{ytQuery}” ↗
+          </a>
           <div className="flex flex-wrap gap-2">
             <Button size="lg" variant="lime" onClick={start} autoFocus>
               {lesson.exercises.length} exercises <ArrowRight /> <Kbd className="bg-lime-foreground/10 text-lime-foreground">Enter</Kbd>
@@ -149,6 +205,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
     return (
       <div className="mx-auto max-w-3xl">
         {header}
+        {introModal}
         <ExercisePlayer key={`${runId}-${index}`} exercise={exercises[index]} onDone={onDone} boss={lesson.boss} nextLabel={index + 1 === exercises.length ? t("finish") : t("next")} />
       </div>
     );

@@ -38,6 +38,12 @@ Requires Node 20+ (developed with Node 22). Audio needs one click, tap or keypre
 | **Progress** | Level and XP, mastery stars per lesson, cat-themed achievements |
 | **Settings** | Language (EN/KO), note names, solfège labels, sharps or flats, focus mode, reduced motion, break reminder, volume, reset |
 
+### Lesson intros & Korean term hints
+
+- **Intro "video" for every lesson.** Before the exercises, each lesson has a short animated intro with captions, highlighted piano keys, step and interval labels (W/H, R/3/5…) and sound. You can play or pause it, skip between scenes, and reopen it mid-lesson with the **Intro** button. Scripts live in `src/content/intros.ts`. 26 lessons have hand-written scripts, and the rest are generated from the lesson's concept and demo. All of it is original content, so there are no licensing issues.
+- **More on YouTube.** Each lesson links to a YouTube *search* for its topic. No third-party videos are embedded or rehosted.
+- **Korean term hints.** Explanations are always in English. Music terms are annotated inline with their Korean word, for example *semitone* `반음` and *whole tone* `온음`. Hover or tap a term to see a short Korean definition. Each lesson intro also lists its key terms (핵심 용어). The glossary has about 100 entries and lives in `src/content/glossary.ts`. You can turn the hints off in Settings.
+
 ### Exercise types (all data-driven and evaluated by the theory engine)
 
 | Type | Kind | Notes |
@@ -152,7 +158,8 @@ The main flows were also checked end to end in headless Chromium:
 
 ## Known limitations / not yet done
 
-- **Korean translation is partial.** All navigation and UI strings and all curriculum titles are translated. Most lesson concepts are bilingual. Some exercise feedback details, hints, and the Playground and Lab labels are still English only.
+- **Lesson explanations are always in English, by design.** Korean appears as inline term hints. The Language setting only translates the app's navigation and buttons.
+- **No embedded YouTube videos.** The intros are built in, and the YouTube links open a search.
 - **Sound** comes from synthesised Tone.js instruments (polysynth keys, pad, acid-style mono bass, square lead, synthesised drums), not sampled pianos.
 - **The sequencers are monophonic**, with one note per step per part. Note lengths are 1/16, 1/8, 1/4 and 1/2. There is no velocity, slide or accent editing yet. MIDI export uses fixed velocities.
 - **No MIDI input** from hardware controllers (Web MIDI) yet.

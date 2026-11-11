@@ -12,6 +12,8 @@ export interface SettingsState {
   volume: number;
   reducedMotion: boolean;
   breakReminderMinutes: number; // 0 = off
+  /** Show Korean words next to English music terms */
+  koreanTerms: boolean;
   set: (p: Partial<Omit<SettingsState, "set">>) => void;
 }
 
@@ -26,6 +28,7 @@ export const useSettings = create<SettingsState>()(
       volume: 0.8,
       reducedMotion: false,
       breakReminderMinutes: 50,
+      koreanTerms: true,
       set: (p) => set(p),
     }),
     { name: "harmonic-cat-settings", version: 1, storage: createJSONStorage(() => localStorage), skipHydration: true },
