@@ -1,0 +1,87 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #0f0b1a;
+  --foreground: #f4f0ff;
+  --card: #1a1428;
+  --card-foreground: #f4f0ff;
+  --secondary: #2a2140;
+  --secondary-foreground: #f4f0ff;
+  --muted-foreground: #a99fc4;
+  --border: #33294d;
+  --ring: #c6ff3d;
+  --primary: #a855f7;
+  --primary-foreground: #ffffff;
+  --primary-shadow: #6d28d9;
+  --lime: #c6ff3d;
+  --lime-foreground: #1a1428;
+  --lime-shadow: #7fae12;
+  --pink: #ff4fa3;
+  --pink-shadow: #b8236b;
+  --destructive: #ff4d6d;
+  --success: #c6ff3d;
+  --radius: 1rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-lime: var(--lime);
+  --color-lime-foreground: var(--lime-foreground);
+  --color-pink: var(--pink);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-nunito), ui-rounded, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  background-image:
+    radial-gradient(60rem 30rem at 110% -10%, rgba(168, 85, 247, 0.16), transparent 60%),
+    radial-gradient(40rem 25rem at -10% 110%, rgba(255, 79, 163, 0.1), transparent 60%);
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
