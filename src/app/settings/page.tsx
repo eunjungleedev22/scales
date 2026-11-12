@@ -10,6 +10,7 @@ import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/select";
 import { Kbd } from "@/components/ui/kbd";
+import { BackupCard } from "@/components/settings/BackupCard";
 
 export default function SettingsPage() {
   const s = useSettings();
@@ -91,6 +92,8 @@ export default function SettingsPage() {
           ))}
         </CardContent>
       </Card>
+
+      <BackupCard />
 
       <Card>
         <CardHeader>
