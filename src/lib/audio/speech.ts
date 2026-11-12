@@ -111,6 +111,8 @@ export function cancelSpeech() {
 
 export interface SpeakOptions {
   rate?: number;
+  /** 0..1 */
+  volume?: number;
   voiceURI?: string | null;
   lang?: string;
 }
@@ -131,6 +133,7 @@ export function speak(text: string, opts: SpeakOptions = {}): Promise<"ended" | 
     u.lang = voice.lang;
   } else u.lang = lang === "ko" ? "ko-KR" : "en-US";
   u.rate = opts.rate ?? 1;
+  if (opts.volume !== undefined) u.volume = Math.max(0, Math.min(1, opts.volume));
   const words = text.split(/\s+/).length;
   const estimateMs = (words / (2.6 * (opts.rate ?? 1))) * 1000;
   return new Promise((resolve) => {

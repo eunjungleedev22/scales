@@ -111,6 +111,11 @@ class AudioEngine {
   }
 
   /** For diagnostics/tests only. */
+  get voiceBusNode(): GainNode | null {
+    return this.voiceBus;
+  }
+
+  /** For diagnostics/tests only. */
   get toneNamespace(): ToneNS | null {
     return this.Tone;
   }
@@ -226,6 +231,19 @@ class AudioEngine {
   /* ---------------- Recorded voice clips (narration) ---------------- */
   private voiceCache = new Map<string, Promise<AudioBuffer | null>>();
   private voiceSrc: AudioBufferSourceNode | null = null;
+  private voiceBus: GainNode | null = null;
+  private voiceVolume = 0.7;
+
+  /** Narration level, independent from the music (0..1). */
+  setVoiceVolume(v: number) {
+    this.voiceVolume = v;
+    if (this.voiceBus) this.voiceBus.gain.value = this.voiceGainValue();
+  }
+  private voiceGainValue() {
+    // Recordings are normalised to -16 LUFS; a +1 dB trim sits them just under the music (measured)
+    const v = this.voiceVolume;
+    return v <= 0 ? 0 : Math.pow(10, 1 / 20) * Math.pow(v / 0.7, 1.6);
+  }
   private voiceDone: ((r: "ended" | "cancelled") => void) | null = null;
 
   /** Download + decode a clip (cached). Resolves null if it can't be loaded. */
@@ -256,11 +274,14 @@ class AudioEngine {
     if (!buf || !ctx) return "unsupported";
     if (ctx.state !== "running") await Promise.race([ctx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 300))]);
     if (ctx.state !== "running") return "unsupported";
+    if (!this.voiceBus || this.voiceBus.context !== ctx) {
+      this.voiceBus = ctx.createGain();
+      this.voiceBus.connect(ctx.destination);
+    }
+    this.voiceBus.gain.value = this.voiceGainValue();
     const src = ctx.createBufferSource();
-    const gain = ctx.createGain();
-    gain.gain.value = Math.min(1.2, Math.pow(10, this.volumeDb / 20) * 1.15);
     src.buffer = buf;
-    src.connect(gain).connect(ctx.destination);
+    src.connect(this.voiceBus);
     this.voiceSrc = src;
     return new Promise((resolve) => {
       this.voiceDone = resolve;
@@ -312,6 +333,9 @@ class AudioEngine {
   }
 
   private buses: { comp?: any; reverb?: any; chorus?: any } = {};
+  private makeupNode: any = null;
+  /** Music make-up gain before the limiter (dB). */
+  musicMakeupDb = 6;
   private tonal: any[] = [];
   preset: TonePreset = "epiano";
 
@@ -323,8 +347,11 @@ class AudioEngine {
     const softClip = new Tone.WaveShaper((x) => Math.tanh(x * 1.1) / Math.tanh(1.1), 2048).toDestination();
     // Hard-knee limiter (Tone.Limiter keeps the browser default 30 dB soft knee, which barely limits)
     const limiter = new Tone.Compressor({ threshold: -3, ratio: 20, knee: 0, attack: 0.001, release: 0.08 }).connect(softClip);
-    const makeup = new Tone.Gain(Tone.dbToGain(3)).connect(limiter);
-    const comp = new Tone.Compressor({ threshold: -20, ratio: 3, attack: 0.005, release: 0.15 }).connect(makeup);
+    const makeup = new Tone.Gain(Tone.dbToGain(this.musicMakeupDb)).connect(limiter);
+    this.makeupNode = makeup;
+    // Mix compressor with a narrow knee (Tone's default 30 dB knee barely compresses): evens out
+    // single notes vs dense chords so the limiter stays almost idle (tuned by measurement)
+    const comp = new Tone.Compressor({ threshold: -34, ratio: 6, knee: 6, attack: 0.005, release: 0.15 }).connect(makeup);
     const reverb = new Tone.Freeverb({ roomSize: 0.62, dampening: 2800, wet: 0.2 }).connect(comp);
     const chorus = new Tone.Chorus({ frequency: 0.8, delayTime: 3.5, depth: 0.6, wet: 0.5 }).connect(reverb).start();
     this.buses = { comp, reverb, chorus };

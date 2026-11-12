@@ -18,6 +18,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       useUI.getState().setHydrated();
       useProgress.getState().touch();
       audio.setVolume(useSettings.getState().volume);
+      audio.setVoiceVolume(useSettings.getState().voiceVolume ?? 0.7);
       audio.setPreset(useSettings.getState().tonePreset ?? "epiano");
       document.documentElement.lang = useSettings.getState().lang;
     });
@@ -31,6 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     events.forEach((ev) => window.addEventListener(ev, unlock, { capture: true, passive: true }));
     const unsub = useSettings.subscribe((s) => {
       audio.setVolume(s.volume);
+      audio.setVoiceVolume(s.voiceVolume ?? 0.7);
       if (s.tonePreset && s.tonePreset !== audio.preset) audio.setPreset(s.tonePreset);
       document.documentElement.lang = s.lang;
     });

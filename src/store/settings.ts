@@ -23,6 +23,8 @@ export interface SettingsState {
   narrationVoice: string | null;
   /** "natural" = pre-recorded neural voice, "device" = the browser/phone voice */
   voiceStyle: "natural" | "device";
+  /** Narration volume 0..1, separate from the music volume */
+  voiceVolume: number;
   set: (p: Partial<Omit<SettingsState, "set">>) => void;
 }
 
@@ -43,6 +45,7 @@ export const useSettings = create<SettingsState>()(
       narrationRate: 1,
       narrationVoice: null,
       voiceStyle: "natural",
+      voiceVolume: 0.7,
       set: (p) => set(p),
     }),
     { name: "harmonic-cat-settings", version: 1, storage: createJSONStorage(() => localStorage), skipHydration: true },

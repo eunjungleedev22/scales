@@ -62,7 +62,7 @@ export default function SettingsPage() {
               <option value={90}>90 {t("minutes")}</option>
             </NativeSelect>
           </Row>
-          <Row label={t("volume")}>
+          <Row label="Music volume">
             <div className="flex w-48 items-center gap-3">
               <Slider aria-label={t("volume")} value={[s.volume * 100]} max={100} step={1} onValueChange={([v]) => s.set({ volume: v / 100 })} />
               <Button size="sm" variant="secondary" onClick={() => audio.playNotes([60, 64, 67], 0.8)}>

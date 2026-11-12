@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { NativeSelect } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 
 /** Voiceover settings: on/off, speed and voice (uses the device's built-in voices). */
 export function VoiceoverCard() {
@@ -78,6 +79,13 @@ export function VoiceoverCard() {
               </NativeSelect>
             </label>
           )}
+          <label className="flex flex-wrap items-center justify-between gap-3 font-bold">
+            Voice volume
+            <span className="flex w-56 items-center gap-3">
+              <Slider aria-label="Voice volume" value={[(s.voiceVolume ?? 0.7) * 100]} max={100} step={1} onValueChange={([v]) => s.set({ voiceVolume: v / 100 })} />
+              <span className="readout w-9 text-right text-xs text-muted-foreground">{Math.round((s.voiceVolume ?? 0.7) * 100)}</span>
+            </span>
+          </label>
           <div>
             <Button
               variant="secondary"

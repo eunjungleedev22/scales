@@ -38,7 +38,8 @@ export async function narrate(text: string, opts: NarrateOptions): Promise<"ende
       if (r !== "unsupported") return r;
     }
   }
-  return speak(spoken, { rate: opts.rate, voiceURI: opts.voiceURI });
+  const { useSettings } = await import("@/store/settings");
+  return speak(spoken, { rate: opts.rate, voiceURI: opts.voiceURI, volume: useSettings.getState().voiceVolume ?? 0.7 });
 }
 
 /** Start downloading a sentence's recording so it plays without a gap. */
