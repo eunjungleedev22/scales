@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen, Volume2 } from "lucide-react";
+import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen, Volume2, Star } from "lucide-react";
 import type { Lesson } from "@/content/curriculum";
 import { getWorld, nextLesson } from "@/content/curriculum";
 import { instantiate } from "@/lib/exercises/instantiate";
@@ -17,6 +17,8 @@ import { Progress } from "@/components/ui/progress";
 import { Kbd } from "@/components/ui/kbd";
 import { Cat } from "@/components/mascot/Cat";
 import { IntroPlayer } from "@/components/lesson/IntroPlayer";
+import { LessonNotebook, NotebookContext } from "@/components/notes/LessonNotebook";
+import type { IntroScene } from "@/content/intros";
 import { GlossaryText, KeyTerms } from "@/components/glossary/GlossaryText";
 import { introFor, youtubeSearchUrl } from "@/content/intros";
 import { termsIn } from "@/content/glossary";
@@ -41,6 +43,10 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
   const progress = useProgress();
   const [bonus, setBonus] = useState(0);
   const [showIntro, setShowIntro] = useState(false);
+  const [sceneCtx, setSceneCtx] = useState<NotebookContext | null>(null);
+  const onSceneChange = (sc: IntroScene | null) => setSceneCtx(sc ? { head: sc.head, text: sc.text } : null);
+  const allNotes = useProgress((s) => s.notes);
+  const starred = useMemo(() => (allNotes ?? []).filter((n) => n.lessonId === lesson.id && n.kind === "highlight").map((n) => n.text), [allNotes, lesson.id]);
   const en = (x: Parameters<typeof loc>[0]) => loc(x, "en");
   const scenes = useMemo(() => introFor(lesson, en), [lesson]); // eslint-disable-line react-hooks/exhaustive-deps
   const keyTerms = useMemo(
@@ -118,7 +124,10 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
             <X className="size-5" />
           </button>
         </div>
-        <IntroPlayer scenes={scenes} title={en(lesson.title)} />
+        <IntroPlayer scenes={scenes} title={en(lesson.title)} onSceneChange={onSceneChange} />
+        <div className="mt-3">
+          <LessonNotebook lessonId={lesson.id} lessonTitle={en(lesson.title)} world={en(world.title)} current={sceneCtx} />
+        </div>
         <ul className="mt-3 space-y-1 rounded-2xl bg-card p-4 text-sm">
           {lesson.concept.map((c, i) => (
             <li key={i}>
@@ -147,16 +156,30 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
               </h1>
             </div>
           </div>
-          <IntroPlayer scenes={scenes} title={en(lesson.title)} />
+          <IntroPlayer scenes={scenes} title={en(lesson.title)} onSceneChange={onSceneChange} />
+          <LessonNotebook lessonId={lesson.id} lessonTitle={en(lesson.title)} world={en(world.title)} current={sceneCtx} />
           <div className="rounded-3xl border border-border bg-card p-5">
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("concept")}</p>
             <ul className="space-y-2">
               {lesson.concept.map((c, i) => (
                 <li key={i} className="flex gap-2 text-base font-semibold">
                   <span style={{ color: world.color }}>▸</span>
-                  <span>
+                  <span className="flex-1">
                     <GlossaryText text={c} />
                   </span>
+                  <button
+                    onClick={() => {
+                      const txt = en(c);
+                      const existing = useProgress.getState().notes?.find((n) => n.lessonId === lesson.id && n.kind === "highlight" && n.text === txt);
+                      if (existing) progress.deleteNote(existing.id);
+                      else progress.addNote({ lessonId: lesson.id, kind: "highlight", text: txt, context: "Concept" });
+                    }}
+                    aria-pressed={starred.includes(en(c))}
+                    aria-label={starred.includes(en(c)) ? "Remove from notes" : "Save to notes"}
+                    className={"self-start p-1 " + (starred.includes(en(c)) ? "text-lime" : "text-muted-foreground hover:text-lime")}
+                  >
+                    <Star className={"size-4 " + (starred.includes(en(c)) ? "fill-current" : "")} />
+                  </button>
                 </li>
               ))}
             </ul>

@@ -11,8 +11,8 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   // Always use HTTPS once visited
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
-  // Turn off powerful features the app doesn't use
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
+  // Turn off powerful features the app doesn't use (microphone: own site only, for voice questions)
+  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(), payment=(), usb=()" },
 ];
 
 const nextConfig: NextConfig = {

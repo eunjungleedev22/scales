@@ -13,6 +13,21 @@ export interface ActivityEntry {
   firstTry: boolean;
 }
 
+/** A saved highlight, free note, or question (with optional answer) tied to a lesson. */
+export interface LessonNote {
+  id: string;
+  lessonId: string;
+  kind: "highlight" | "note" | "question";
+  /** Highlighted text, the note, or the question */
+  text: string;
+  /** Scene headline / concept the note refers to */
+  context?: string;
+  answer?: string;
+  /** Which AI the question was sent to */
+  askedWith?: string;
+  createdAt: number;
+}
+
 export interface SavedReflection {
   id: string;
   createdAt: number;
@@ -45,6 +60,10 @@ interface ProgressState {
   reflections: SavedReflection[];
   lastReflectionAt: number | null;
   saveReflection: (r: SavedReflection) => void;
+  notes: LessonNote[];
+  addNote: (n: Omit<LessonNote, "id" | "createdAt">) => LessonNote;
+  updateNote: (id: string, patch: Partial<Pick<LessonNote, "text" | "answer">>) => void;
+  deleteNote: (id: string) => void;
   deleteReflection: (id: string) => void;
 
   recordAttempt: (exerciseId: string, info: AttemptInfo & { ear?: boolean }) => number;
@@ -76,6 +95,7 @@ const initial = {
   log: [] as ActivityEntry[],
   reflections: [] as SavedReflection[],
   lastReflectionAt: null as number | null,
+  notes: [] as LessonNote[],
 };
 
 const LOG_CAP = 3000;
@@ -174,6 +194,13 @@ export const useProgress = create<ProgressState>()(
       },
       saveReflection: (r) => set((s) => ({ reflections: [r, ...(s.reflections ?? []).filter((x) => x.id !== r.id)].slice(0, 60), lastReflectionAt: r.createdAt })),
       deleteReflection: (id) => set((s) => ({ reflections: (s.reflections ?? []).filter((x) => x.id !== id) })),
+      addNote: (n) => {
+        const note: LessonNote = { ...n, id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, createdAt: Date.now() };
+        set((s) => ({ notes: [...(s.notes ?? []), note].slice(-1000) }));
+        return note;
+      },
+      updateNote: (id, patch) => set((s) => ({ notes: (s.notes ?? []).map((x) => (x.id === id ? { ...x, ...patch } : x)) })),
+      deleteNote: (id) => set((s) => ({ notes: (s.notes ?? []).filter((x) => x.id !== id) })),
       reset: () => set({ ...initial }),
     }),
     { name: "harmonic-cat-progress", version: 1, storage: createJSONStorage(() => localStorage), skipHydration: true },

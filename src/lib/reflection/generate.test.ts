@@ -42,3 +42,26 @@ describe("reflection generator", () => {
     expect(md).toContain("반음");
   });
 });
+
+describe("notes in reflections", () => {
+  const notes = [
+    { lessonId: "w2-modes", kind: "highlight" as const, text: "Dorian is natural minor with a raised sixth.", context: "Dorian: minor + raised 6th", createdAt: T + 100_000 },
+    { lessonId: "w2-modes", kind: "question" as const, text: "Why does one note change the mood?", answer: "Because it changes the third-to-sixth relationship.", askedWith: "Claude", createdAt: T + 110_000 },
+    { lessonId: "w1-steps", kind: "note" as const, text: "E-F has no black key!", createdAt: T - 9 * 86_400_000 },
+  ];
+  it("includes notes from the window, with lesson titles", () => {
+    const r = generateReflection(log, { kind: "since", since: T - 1000, label: "Today" }, T + 200_000, notes);
+    expect(r.notes.map((n) => n.kind)).toEqual(["highlight", "question"]);
+    expect(r.notes[0].lessonTitle).toBe("Modes");
+    const md = reflectionToMarkdown(r, {});
+    expect(md).toContain("## My notes & questions");
+    expect(md).toContain("★ Dorian is natural minor with a raised sixth.");
+    expect(md).toContain("**Q (Modes):** Why does one note change the mood?");
+    expect(md).toContain("**A (Claude):** Because it changes");
+  });
+  it("lesson scope picks that lesson's notes; notes alone make a non-empty session", () => {
+    const r = generateReflection([], { kind: "lesson", lessonId: "w1-steps" }, T, notes);
+    expect(r.notes.map((n) => n.text)).toEqual(["E-F has no black key!"]);
+    expect(r.empty).toBe(false);
+  });
+});

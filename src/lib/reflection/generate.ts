@@ -15,6 +15,20 @@ export interface ActivityLike {
   firstTry: boolean;
 }
 
+export interface NoteLike {
+  lessonId: string;
+  kind: "highlight" | "note" | "question";
+  text: string;
+  context?: string;
+  answer?: string;
+  askedWith?: string;
+  createdAt: number;
+}
+
+export interface ReflectionNote extends NoteLike {
+  lessonTitle: string;
+}
+
 export type ReflectionScope = { kind: "since"; since: number; label: string } | { kind: "lesson"; lessonId: string };
 
 export interface LessonSummary {
@@ -43,6 +57,8 @@ export interface ReflectionSession {
   questions: { id: string; text: string }[];
   studioTask: string | null;
   recheckIds: string[];
+  /** Highlights, notes and questions saved in this window / lesson */
+  notes: ReflectionNote[];
 }
 
 const en = (l: Localized | undefined) => loc(l, "en");
@@ -75,7 +91,11 @@ function activeMinutes(entries: ActivityLike[]): number {
   return Math.round(ms / 60_000 + (entries.length ? 1 : 0));
 }
 
-export function generateReflection(log: ActivityLike[], scope: ReflectionScope, now = Date.now()): ReflectionSession {
+export function generateReflection(log: ActivityLike[], scope: ReflectionScope, now = Date.now(), savedNotes: NoteLike[] = []): ReflectionSession {
+  const notes: ReflectionNote[] = savedNotes
+    .filter((n) => (scope.kind === "since" ? n.createdAt >= scope.since && n.createdAt <= now : n.lessonId === scope.lessonId))
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .map((n) => ({ ...n, lessonTitle: en(ALL_LESSONS.find((l) => l.id === n.lessonId)?.title) || n.lessonId }));
   const entries = log
     .filter((e) => (scope.kind === "since" ? e.t >= scope.since && e.t <= now : e.id.startsWith(`${scope.lessonId}-`)))
     .sort((a, b) => a.t - b.t);
@@ -154,7 +174,7 @@ export function generateReflection(log: ActivityLike[], scope: ReflectionScope, 
   return {
     title: scope.kind === "lesson" ? `Reflection: ${lessonTitle}` : "Reflection",
     scopeLabel: scope.kind === "lesson" ? lessonTitle : scope.label,
-    empty: entries.length === 0,
+    empty: entries.length === 0 && notes.length === 0,
     totals,
     covered,
     wins,
@@ -164,6 +184,7 @@ export function generateReflection(log: ActivityLike[], scope: ReflectionScope, 
     questions,
     studioTask,
     recheckIds,
+    notes,
   };
 }
 
@@ -183,6 +204,17 @@ export function reflectionToMarkdown(r: ReflectionSession, answers: Record<strin
   if (r.keyTerms.length) {
     lines.push("## Key terms", "");
     for (const t of r.keyTerms) lines.push(`- **${t.terms[0]}** — ${t.ko}: ${t.def}`);
+    lines.push("");
+  }
+  if (r.notes.length) {
+    lines.push("## My notes & questions", "");
+    for (const n of r.notes) {
+      const where = [n.lessonTitle, n.context].filter(Boolean).join(" · ");
+      if (n.kind === "question") {
+        lines.push(`- **Q (${where}):** ${n.text}`);
+        if (n.answer) lines.push(`  - **A${n.askedWith ? ` (${n.askedWith})` : ""}:** ${n.answer.replace(/\n+/g, " ")}`);
+      } else lines.push(`- ${n.kind === "highlight" ? "★" : "✎"} ${n.text} _(${where})_`);
+    }
     lines.push("");
   }
   if (r.wins.length) lines.push("## Going well", "", ...r.wins.map((w) => `- ${w.title}`), "");

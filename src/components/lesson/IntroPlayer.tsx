@@ -34,7 +34,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * A short "video": captioned scenes with piano highlights, sound and a voiceover.
  * With voiceover on, each scene is read aloud first, then its music plays, then it moves on.
  */
-export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[]; title: string; onFinished?: () => void }) {
+export function IntroPlayer({ scenes, title, onFinished, onSceneChange }: { scenes: IntroScene[]; title: string; onFinished?: () => void; onSceneChange?: (scene: IntroScene | null) => void }) {
   const narrationSetting = useSettings((s) => s.narration ?? true);
   const rate = useSettings((s) => s.narrationRate ?? 1);
   const voiceURI = useSettings((s) => s.narrationVoice ?? null);
@@ -52,9 +52,11 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   const [progress, setProgress] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const runRef = useRef(0);
+  const playingRef = useRef(false);
   const finishedRef = useRef(onFinished);
   finishedRef.current = onFinished;
   const scene = scenes[idx];
+  playingRef.current = playing;
 
   useEffect(() => {
     void getVoices();
@@ -120,6 +122,28 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   );
 
   useEffect(() => () => stopAll(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Tell the notebook what's on screen
+  const sceneRef = useRef(onSceneChange);
+  sceneRef.current = onSceneChange;
+  useEffect(() => {
+    sceneRef.current?.(started ? scenes[idx] : null);
+  }, [idx, started, scenes]);
+
+  // Pause when the notebook asks (e.g. while typing a question)
+  useEffect(() => {
+    const onPause = () => {
+      if (runRef.current && playingRef.current) {
+        runRef.current++;
+        stopNarration();
+        audio.stop();
+        setSpeaking(false);
+        setPlaying(false);
+      }
+    };
+    window.addEventListener("hc:pause-intro", onPause);
+    return () => window.removeEventListener("hc:pause-intro", onPause);
+  }, []);
 
   const start = (from = 0) => {
     // Inside the tap: unlock audio and speech (required on iOS)

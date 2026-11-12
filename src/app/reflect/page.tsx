@@ -27,7 +27,8 @@ function download(text: string, name: string) {
 function ReflectInner() {
   const params = useSearchParams();
   const lessonParam = params.get("lesson");
-  const { log = [], lastReflectionAt, reflections = [], saveReflection, deleteReflection } = useProgress();
+  const { log = [], lastReflectionAt, reflections = [], saveReflection, deleteReflection, notes = [], deleteNote } = useProgress();
+  const [showAllNotes, setShowAllNotes] = useState(false);
   const scopes = useMemo(() => {
     const now = Date.now();
     const startOfDay = new Date();
@@ -51,7 +52,7 @@ function ReflectInner() {
 
   const generate = (key = scopeKey) => {
     const s = scopes.find((x) => x.key === key) ?? scopes[0];
-    setSession(generateReflection(log, s.scope));
+    setSession(generateReflection(log, s.scope, Date.now(), notes));
     setAnswers({});
     setSaved(false);
     setRecheck(null);
@@ -155,6 +156,28 @@ function ReflectInner() {
                   Also practised: {session.practice.map((p) => `${p.label} (${p.answered}, ${Math.round(p.firstTryRate * 100)}% first try)`).join(" · ")}
                 </p>
               )}
+            </section>
+          )}
+
+          {session.notes.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <h2 className="section-title">
+                <span>★</span> Your notes &amp; questions
+              </h2>
+              <ul className="panel divide-y divide-border">
+                {session.notes.map((n, i) => (
+                  <li key={i} className="flex gap-3 p-3 text-sm">
+                    <span className={cn("readout w-4 shrink-0 text-center", n.kind === "highlight" ? "text-lime" : n.kind === "question" ? "text-pink" : "text-primary")}>{n.kind === "highlight" ? "★" : n.kind === "question" ? "?" : "✎"}</span>
+                    <div className="min-w-0">
+                      <p className="label mb-0.5">{[n.lessonTitle, n.context].filter(Boolean).join(" · ")}</p>
+                      <p className={cn(n.kind === "question" && "font-semibold")}>
+                        <GlossaryText text={n.text} />
+                      </p>
+                      {n.answer && <p className="mt-1 whitespace-pre-wrap border-l-2 border-pink/50 pl-2 text-muted-foreground">{n.answer}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
@@ -265,6 +288,39 @@ function ReflectInner() {
             </Button>
           </div>
         </article>
+      )}
+
+      {notes.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <button onClick={() => setShowAllNotes((o) => !o)} aria-expanded={showAllNotes} className="section-title text-left">
+            <span>★</span> All my notes ({notes.length}) <ChevronDown className={cn("size-4 transition-transform", showAllNotes && "rotate-180")} />
+          </button>
+          {showAllNotes &&
+            [...new Set(notes.map((n) => n.lessonId))].map((lid) => (
+              <div key={lid} className="panel">
+                <Link href={`/learn/${lid}`} className="block border-b border-border px-4 py-2.5 font-bold hover:text-primary">
+                  {getLesson(lid) ? (typeof getLesson(lid)!.title === "string" ? (getLesson(lid)!.title as string) : (getLesson(lid)!.title as { en: string }).en) : lid}
+                </Link>
+                <ul className="divide-y divide-border">
+                  {notes
+                    .filter((n) => n.lessonId === lid)
+                    .map((n) => (
+                      <li key={n.id} className="flex gap-3 px-4 py-2.5 text-sm">
+                        <span className={cn("readout w-4 shrink-0 text-center", n.kind === "highlight" ? "text-lime" : n.kind === "question" ? "text-pink" : "text-primary")}>{n.kind === "highlight" ? "★" : n.kind === "question" ? "?" : "✎"}</span>
+                        <div className="min-w-0 flex-1">
+                          {n.context && <p className="label">{n.context}</p>}
+                          <p className={cn(n.kind === "question" && "font-semibold")}>{n.text}</p>
+                          {n.answer && <p className="mt-1 whitespace-pre-wrap border-l-2 border-pink/50 pl-2 text-muted-foreground">{n.answer}</p>}
+                        </div>
+                        <button onClick={() => confirm("Delete this note?") && deleteNote(n.id)} aria-label="Delete note" className="self-start p-1 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="size-4" />
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ))}
+        </section>
       )}
 
       {reflections.length > 0 && (

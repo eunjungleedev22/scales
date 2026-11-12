@@ -73,6 +73,16 @@ Limits: the lockout counter lives in each server instance's memory, and there's 
 
 Save it to your journal, or download it as Markdown notes. Sessions are built from a local activity log and lesson content, without any AI service. The code is in `src/lib/reflection/generate.ts`, which is tested.
 
+### Notebook: highlights, notes and questions
+
+Every lesson has a small **Notebook** under its intro video. It's also available mid-lesson through the **Intro** button.
+
+- **★ Save this part** stars whatever the video is explaining right now. You can also star any concept bullet.
+- **✎ Note** saves a quick note. Type it, or dictate it in English or Korean using the device's speech recognition.
+- **Ask** turns a spoken or typed question into a self-contained prompt that includes the lesson and the current scene. It opens that prompt in **ChatGPT, Claude, Perplexity or Google** in a new tab and saves the question. Paste the answer back to keep the Q&A. There's no built-in AI, so no API key or cost is involved.
+- Notes appear in the lesson's **My notes** list. They're also in every **Reflect** session for that window or lesson, under *Your notes & questions*, in the downloadable Markdown notes, and in *All my notes* on the Reflect page. They're included in progress backups.
+- The microphone is only allowed on this site's own pages (`Permissions-Policy: microphone=(self)`).
+
 ### Lesson intros & Korean term hints
 
 - **Voiceover (natural voice).** Every intro scene and concept note is narrated with a pre-recorded neural voice: Kokoro-82M, voice `af_heart`, Apache-2.0. The clips are shipped as MP3s in `public/voice` (about 9 MB) and play through the same Web Audio context as the music. The next clip is preloaded, so there's no gap between scenes. Spoken text is cleaned for speech ("C#" becomes "C sharp", "W W H" becomes "whole, whole, half", and Roman numerals become words). The renderer also makes sure the note "A" is said "ay", not "uh". If a recording is missing, the app falls back to the device's built-in voice, which you can also choose in **Settings → Voiceover**. To re-record after editing scripts:
