@@ -75,7 +75,15 @@ Save it to your journal, or download it as Markdown notes. Sessions are built fr
 
 ### Lesson intros & Korean term hints
 
-- **Voiceover.** Intros are read aloud by default, using the device's built-in voices (Web Speech API), so there's nothing to pay for and nothing to install. Each scene is spoken first, then its music plays, then the intro moves on. Music notation is cleaned up for speech: "C#" is read as "C sharp", "W W H" as "whole, whole, half", and Roman numerals as "one major, two minor…". Concept notes have a **Listen** button, and each key term has a speaker that says the English word, then the Korean one. You can change the voice, speed and on/off setting in **Settings → Voiceover**.
+- **Voiceover (natural voice).** Every intro scene and concept note is narrated with a pre-recorded neural voice: Kokoro-82M, voice `af_heart`, Apache-2.0. The clips are shipped as MP3s in `public/voice` (about 9 MB) and play through the same Web Audio context as the music. The next clip is preloaded, so there's no gap between scenes. Spoken text is cleaned for speech ("C#" becomes "C sharp", "W W H" becomes "whole, whole, half", and Roman numerals become words). The renderer also makes sure the note "A" is said "ay", not "uh". If a recording is missing, the app falls back to the device's built-in voice, which you can also choose in **Settings → Voiceover**. To re-record after editing scripts:
+
+  ```bash
+  npx tsx scripts/export-narration.ts > narration.json
+  python3 scripts/render-voice.py narration.json model.onnx voices.npz public/voice
+  ```
+
+  The model comes from `onnx-community/Kokoro-82M-v1.0-ONNX` on Hugging Face. A test fails if any narrated sentence has no recording.
+- **Scripts.** Every lesson has a hand-written intro. Each scene shows one big key idea, with a spoken explanation, piano visuals and sound, and the intro ends with a **Remember** recap.
 - **Intro "video" for every lesson.** Before the exercises, each lesson has a short animated intro with captions, highlighted piano keys, step and interval labels (W/H, R/3/5…) and sound. You can play or pause it, skip between scenes, and reopen it mid-lesson with the **Intro** button. Scripts live in `src/content/intros.ts`. 26 lessons have hand-written scripts, and the rest are generated from the lesson's concept and demo. All of it is original content, so there are no licensing issues.
 - **More on YouTube.** Each lesson links to a YouTube *search* for its topic. No third-party videos are embedded or rehosted.
 - **Korean term hints.** Explanations are always in English. Music terms are annotated inline with their Korean word, for example *semitone* `반음` and *whole tone* `온음`. Hover or tap a term to see a short Korean definition. Each lesson intro also lists its key terms (핵심 용어). The glossary has about 100 entries and lives in `src/content/glossary.ts`. You can turn the hints off in Settings.

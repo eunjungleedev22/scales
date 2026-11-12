@@ -5,7 +5,8 @@ import { Mic, MicOff, Pause, Play, RotateCcw, SkipBack, SkipForward } from "luci
 import type { IntroScene } from "@/content/intros";
 import { audio } from "@/lib/audio/engine";
 import { cueToEvents, playCue } from "@/lib/audio/cues";
-import { cancelSpeech, estimateSpeechMs, getVoices, primeSpeech, speak, speechSupported, toSpeech } from "@/lib/audio/speech";
+import { getVoices, primeSpeech, speechSupported } from "@/lib/audio/speech";
+import { loadVoiceManifest, narrate, narrationMs, prefetchNarration, stopNarration } from "@/lib/audio/narration";
 import { useSettings } from "@/store/settings";
 import { VirtualPiano, KeyMark } from "@/components/piano/VirtualPiano";
 import { GlossaryText } from "@/components/glossary/GlossaryText";
@@ -37,9 +38,12 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   const narrationSetting = useSettings((s) => s.narration ?? true);
   const rate = useSettings((s) => s.narrationRate ?? 1);
   const voiceURI = useSettings((s) => s.narrationVoice ?? null);
+  const style = useSettings((s) => s.voiceStyle ?? "natural");
   const setSettings = useSettings((s) => s.set);
-  const canSpeak = speechSupported();
-  const narrate = narrationSetting && canSpeak;
+  const [manifest, setManifest] = useState<Record<string, number>>({});
+  const hasRecordings = Object.keys(manifest).length > 0;
+  const canSpeak = speechSupported() || (style === "natural" && hasRecordings);
+  const narrateOn = narrationSetting && canSpeak;
 
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -54,6 +58,7 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
 
   useEffect(() => {
     void getVoices();
+    void loadVoiceManifest().then(setManifest);
   }, []);
 
   const playSceneSound = useCallback((s: IntroScene) => {
@@ -66,7 +71,7 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
 
   const stopAll = () => {
     runRef.current++;
-    cancelSpeech();
+    stopNarration();
     audio.stop();
     setSpeaking(false);
   };
@@ -77,8 +82,8 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
       const s = scenes[i];
       setIdx(i);
       setProgress(0);
-      const text = toSpeech(s.text);
-      const total = withVoice ? estimateSpeechMs(text, rate) + soundMs(s) + 600 : Math.max(silentSceneMs(s), soundMs(s));
+      const total = withVoice ? narrationMs(s.text, style, rate, manifest) + soundMs(s) + 600 : Math.max(silentSceneMs(s), soundMs(s));
+      if (withVoice && scenes[i + 1]) void prefetchNarration(scenes[i + 1].text);
       const t0 = performance.now();
       const ticker = setInterval(() => {
         if (token !== runRef.current) return clearInterval(ticker);
@@ -87,7 +92,7 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
       try {
         if (withVoice) {
           setSpeaking(true);
-          await speak(text, { rate, voiceURI });
+          await narrate(s.text, { style, rate, voiceURI });
           setSpeaking(false);
           if (token !== runRef.current) return;
           if (hasSound(s)) {
@@ -111,7 +116,7 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
         finishedRef.current?.();
       }
     },
-    [scenes, rate, voiceURI, playSceneSound],
+    [scenes, rate, voiceURI, style, manifest, playSceneSound],
   );
 
   useEffect(() => () => stopAll(), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -119,12 +124,12 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   const start = (from = 0) => {
     // Inside the tap: unlock audio and speech (required on iOS)
     audio.unlockFromGesture();
-    if (narrate) primeSpeech();
+    if (narrateOn && style === "device") primeSpeech();
     stopAll();
     setStarted(true);
     setDone(false);
     setPlaying(true);
-    void runScene(from, narrate);
+    void runScene(from, narrateOn);
   };
 
   const togglePlay = () => {
@@ -148,13 +153,13 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   };
 
   const toggleVoice = () => {
-    if (narrationSetting) cancelSpeech();
+    if (narrationSetting) stopNarration();
     else primeSpeech();
     setSettings({ narration: !narrationSetting });
     if (playing) {
       // restart the current scene with the new setting
       runRef.current++;
-      cancelSpeech();
+      stopNarration();
       setTimeout(() => void runScene(idx, !narrationSetting && canSpeak), 50);
     }
   };
@@ -165,7 +170,7 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   const lowest = scene?.keys?.length ? Math.min(...scene.keys) : 60;
   const highest = scene?.keys?.length ? Math.max(...scene.keys) : 60;
   const startMidi = Math.min(lowest - (lowest % 12), Math.max(48, highest - 24 + ((12 - ((highest - 24) % 12)) % 12)));
-  const totalSec = Math.round(scenes.reduce((sum, x) => sum + (narrate ? estimateSpeechMs(toSpeech(x.text), rate) + soundMs(x) + 600 : Math.max(silentSceneMs(x), soundMs(x))), 0) / 1000);
+  const totalSec = Math.round(scenes.reduce((sum, x) => sum + (narrateOn ? narrationMs(x.text, style, rate, manifest) + soundMs(x) + 600 : Math.max(silentSceneMs(x), soundMs(x))), 0) / 1000);
 
   return (
     <section className="panel overflow-hidden" aria-label={`Intro video: ${title}`}>
@@ -188,7 +193,7 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
                 Watch &amp; listen
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {narrate ? "Narrated, with sound and piano. Just listen along." : canSpeak ? "Captions, sound and piano. Voiceover is off." : "Captions, sound and piano (this browser has no voiceover)."}
+                {narrateOn ? "Narrated, with sound and piano. Just listen along." : canSpeak ? "Captions, sound and piano. Voiceover is off." : "Captions, sound and piano (this browser has no voiceover)."}
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
@@ -219,15 +224,29 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
           </div>
 
           <div className="px-4 pb-3 pt-4 sm:px-6">
-            <div className="flex min-h-[5.5rem] items-start gap-3">
-              <Cat mood={done ? "happy" : speaking ? "idle" : "think"} size={48} className="shrink-0" />
-              <AnimatePresence mode="wait">
-                <motion.p key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-base font-semibold leading-relaxed sm:text-lg" aria-live="polite">
-                  {speaking && <span className="label mr-2 text-pink">● speaking</span>}
-                  {scene && <GlossaryText text={scene.text} />}
-                </motion.p>
-              </AnimatePresence>
-            </div>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                className={cn("flex min-h-[7rem] items-start gap-3", scene?.recap && "rounded-md border-l-4 border-l-lime bg-lime/5 p-3")}
+                aria-live="polite"
+              >
+                <Cat mood={done || scene?.recap ? "happy" : speaking ? "idle" : "think"} size={48} className="shrink-0" />
+                <div className="min-w-0">
+                  {scene?.head && (
+                    <p className={cn("text-2xl font-extrabold uppercase leading-[1.05] sm:text-3xl", scene.recap ? "text-lime" : "text-primary")} style={{ fontStretch: "112%" }}>
+                      {scene.head}
+                    </p>
+                  )}
+                  <p className="mt-2 text-[15px] font-medium leading-relaxed text-foreground/90 sm:text-base">
+                    {speaking && <span className="label mr-2 text-pink">● speaking</span>}
+                    {scene && <GlossaryText text={scene.text} />}
+                  </p>
+                </div>
+              </motion.div>
+            </AnimatePresence>
             <div className={cn("mt-3 transition-opacity", scene?.keys?.length ? "opacity-100" : "opacity-35")}>
               <VirtualPiano startMidi={startMidi} octaves={2} marks={marks} badges={scene?.badges} playSound={false} compact disabled label="Intro piano" />
             </div>

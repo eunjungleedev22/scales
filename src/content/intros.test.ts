@@ -20,3 +20,14 @@ describe("lesson intro videos", () => {
     }
   });
 });
+
+describe("intro scripts", () => {
+  it("every non-boss lesson has a hand-written intro with key ideas and a recap", () => {
+    for (const l of ALL_LESSONS.filter((x) => !x.boss)) {
+      const s = INTROS[l.id];
+      expect(s, `${l.id} has no intro`).toBeDefined();
+      expect(s.at(-1)?.recap, `${l.id} should end with a Remember scene`).toBe(true);
+      expect(s.every((x) => x.head), `${l.id}: every scene needs a headline`).toBe(true);
+    }
+  });
+});

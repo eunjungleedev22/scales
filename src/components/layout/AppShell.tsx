@@ -12,7 +12,7 @@ import { levelFromXp } from "@/lib/progress/xp";
 import { Cat } from "@/components/mascot/Cat";
 import { Toasts } from "./Toasts";
 import { audio } from "@/lib/audio/engine";
-import { cancelSpeech } from "@/lib/audio/speech";
+import { stopNarration } from "@/lib/audio/narration";
 import { useAudioState } from "@/hooks/useAudio";
 import { cn } from "@/lib/utils";
 import type { DictKey } from "@/i18n/dict";
@@ -77,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Stop audio (and close the mobile "More" sheet) when navigating between pages
   useEffect(() => {
     audio.stop();
-    cancelSpeech();
+    stopNarration();
     setMoreOpen(false);
   }, [pathname]);
 

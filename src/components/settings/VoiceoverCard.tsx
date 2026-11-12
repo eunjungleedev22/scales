@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Play } from "lucide-react";
-import { getVoices, pickVoice, primeSpeech, speak, speechSupported } from "@/lib/audio/speech";
+import { getVoices, pickVoice, primeSpeech, speechSupported } from "@/lib/audio/speech";
+import { narrate } from "@/lib/audio/narration";
+import { audio } from "@/lib/audio/engine";
+import { VOICE_TEST_LINE } from "@/lib/audio/narration-lines";
 import { useSettings } from "@/store/settings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -25,15 +28,34 @@ export function VoiceoverCard() {
           <span>◉</span> Voiceover
         </CardTitle>
         <CardDescription>
-          {supported ? "Lesson intros are read aloud so you can listen instead of reading. Uses your device's built-in voices — on iPhone you can download nicer ones in Settings → Accessibility → Spoken Content → Voices." : "This browser doesn't support voiceover."}
+          Lesson intros and concept notes are read aloud so you can listen instead of reading. The natural voice is pre-recorded and sounds the same on every device.
         </CardDescription>
       </CardHeader>
-      {supported && (
+      {(
         <CardContent className="flex flex-col gap-4">
           <label className="flex items-center justify-between gap-4 font-bold" htmlFor="narration">
             Read lesson intros aloud
             <Switch id="narration" checked={s.narration ?? true} onCheckedChange={(v) => s.set({ narration: v })} />
           </label>
+          <div className="flex flex-col gap-2">
+            <span className="font-bold">Voice style</span>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {(
+                [
+                  ["natural", "Natural voice", "Pre-recorded neural voice. Warm and human-sounding."],
+                  ["device", "Device voice", "Your phone or browser's built-in voice. Adjustable speed."],
+                ] as const
+              ).map(([id, name, desc]) => (
+                <button key={id} onClick={() => s.set({ voiceStyle: id })} aria-pressed={(s.voiceStyle ?? "natural") === id} className={"panel flex flex-col items-start gap-1 p-3 text-left " + ((s.voiceStyle ?? "natural") === id ? "border-primary ring-1 ring-primary" : "")}>
+                  <span className="flex items-center gap-2 font-bold">
+                    <span className={"led " + ((s.voiceStyle ?? "natural") === id ? "led-orange" : "")} /> {name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          {s.voiceStyle === "device" && supported && (
           <label className="flex items-center justify-between gap-4 font-bold">
             Speed
             <NativeSelect value={String(s.narrationRate ?? 1)} onChange={(e) => s.set({ narrationRate: Number(e.target.value) })}>
@@ -43,7 +65,8 @@ export function VoiceoverCard() {
               <option value="1.15">Brisk</option>
             </NativeSelect>
           </label>
-          {voices.length > 1 && (
+          )}
+          {s.voiceStyle === "device" && voices.length > 1 && (
             <label className="flex flex-wrap items-center justify-between gap-2 font-bold">
               Voice
               <NativeSelect className="max-w-full" value={current?.voiceURI ?? ""} onChange={(e) => s.set({ narrationVoice: e.target.value || null })}>
@@ -60,8 +83,9 @@ export function VoiceoverCard() {
               variant="secondary"
               size="sm"
               onClick={() => {
+                audio.unlockFromGesture();
                 primeSpeech();
-                void speak("A semitone is the smallest step on the keyboard. Two semitones make a whole tone.", { rate: s.narrationRate ?? 1, voiceURI: s.narrationVoice ?? null });
+                void narrate(VOICE_TEST_LINE, { style: s.voiceStyle ?? "natural", rate: s.narrationRate ?? 1, voiceURI: s.narrationVoice ?? null });
               }}
             >
               <Play /> Test voice

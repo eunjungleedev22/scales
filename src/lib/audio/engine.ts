@@ -223,6 +223,73 @@ class AudioEngine {
     }
   }
 
+  /* ---------------- Recorded voice clips (narration) ---------------- */
+  private voiceCache = new Map<string, Promise<AudioBuffer | null>>();
+  private voiceSrc: AudioBufferSourceNode | null = null;
+  private voiceDone: ((r: "ended" | "cancelled") => void) | null = null;
+
+  /** Download + decode a clip (cached). Resolves null if it can't be loaded. */
+  loadVoiceClip(url: string): Promise<AudioBuffer | null> {
+    if (!this.voiceCache.has(url)) {
+      const p = fetch(url)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status)))))
+        .then(async (buf) => {
+          // decodeAudioData needs a context; create one lazily (it stays suspended until a tap)
+          const ctx = this.nativeCtx ?? new (window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+          if (!this.nativeCtx) this.nativeCtx = ctx;
+          return await new Promise<AudioBuffer>((res, rej) => ctx.decodeAudioData(buf, res, rej));
+        })
+        .catch(() => {
+          this.voiceCache.delete(url);
+          return null;
+        });
+      this.voiceCache.set(url, p);
+    }
+    return this.voiceCache.get(url)!;
+  }
+
+  /** Play a recorded clip through the (unlocked) audio context. */
+  async playVoiceClip(url: string): Promise<"ended" | "cancelled" | "unsupported"> {
+    this.stopVoice();
+    const buf = await this.loadVoiceClip(url);
+    const ctx = this.nativeCtx;
+    if (!buf || !ctx) return "unsupported";
+    if (ctx.state !== "running") await Promise.race([ctx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 300))]);
+    if (ctx.state !== "running") return "unsupported";
+    const src = ctx.createBufferSource();
+    const gain = ctx.createGain();
+    gain.gain.value = Math.min(1.2, Math.pow(10, this.volumeDb / 20) * 1.15);
+    src.buffer = buf;
+    src.connect(gain).connect(ctx.destination);
+    this.voiceSrc = src;
+    return new Promise((resolve) => {
+      this.voiceDone = resolve;
+      src.onended = () => {
+        if (this.voiceSrc === src) {
+          this.voiceSrc = null;
+          this.voiceDone = null;
+          resolve("ended");
+        }
+      };
+      src.start();
+    });
+  }
+
+  stopVoice() {
+    const src = this.voiceSrc;
+    const done = this.voiceDone;
+    this.voiceSrc = null;
+    this.voiceDone = null;
+    if (src) {
+      try {
+        src.stop();
+      } catch {
+        /* already stopped */
+      }
+    }
+    done?.("cancelled");
+  }
+
   /** Diagnostic: a plain Web Audio beep that bypasses Tone.js entirely. */
   beepRaw(): boolean {
     this.unlockFromGesture();

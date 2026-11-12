@@ -21,7 +21,8 @@ import { GlossaryText, KeyTerms } from "@/components/glossary/GlossaryText";
 import { introFor, youtubeSearchUrl } from "@/content/intros";
 import { termsIn } from "@/content/glossary";
 import { loc } from "@/lib/exercises/types";
-import { primeSpeech, speak, speechSupported, toSpeech, cancelSpeech } from "@/lib/audio/speech";
+import { primeSpeech, speechSupported } from "@/lib/audio/speech";
+import { narrate, stopNarration } from "@/lib/audio/narration";
 import { useSettings } from "@/store/settings";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +56,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
 
   const start = () => {
     audio.stop();
-    cancelSpeech();
+    stopNarration();
     xpAtStart.current = useProgress.getState().xp;
     setOutcomes([]);
     setIndex(0);
@@ -164,10 +165,11 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
               <Button
                 variant="secondary"
                 onClick={async () => {
+                  audio.unlockFromGesture();
                   primeSpeech();
                   const st = useSettings.getState();
                   for (const c of lesson.concept) {
-                    const r = await speak(toSpeech(en(c)), { rate: st.narrationRate ?? 1, voiceURI: st.narrationVoice });
+                    const r = await narrate(en(c), { style: st.voiceStyle ?? "natural", rate: st.narrationRate ?? 1, voiceURI: st.narrationVoice });
                     if (r === "cancelled") break;
                   }
                 }}
