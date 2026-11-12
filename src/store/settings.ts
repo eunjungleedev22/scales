@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Lang } from "@/lib/exercises/types";
+import type { TonePreset } from "@/lib/audio/engine";
 
 export interface SettingsState {
   lang: Lang;
@@ -14,6 +15,8 @@ export interface SettingsState {
   breakReminderMinutes: number; // 0 = off
   /** Show Korean words next to English music terms */
   koreanTerms: boolean;
+  /** Instrument sound for keys, pads, bass and lead */
+  tonePreset: TonePreset;
   set: (p: Partial<Omit<SettingsState, "set">>) => void;
 }
 
@@ -29,6 +32,7 @@ export const useSettings = create<SettingsState>()(
       reducedMotion: false,
       breakReminderMinutes: 50,
       koreanTerms: true,
+      tonePreset: "epiano",
       set: (p) => set(p),
     }),
     { name: "harmonic-cat-settings", version: 1, storage: createJSONStorage(() => localStorage), skipHydration: true },

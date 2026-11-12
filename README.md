@@ -188,7 +188,7 @@ The main flows were also checked end to end in headless Chromium:
 
 - **Lesson explanations are always in English, by design.** Korean appears as inline term hints. The Language setting only translates the app's navigation and buttons.
 - **No embedded YouTube videos.** The intros are built in, and the YouTube links open a search.
-- **Sound** comes from synthesised Tone.js instruments (polysynth keys, pad, acid-style mono bass, square lead, synthesised drums), not sampled pianos.
+- **Sound** is synthesised with Tone.js, not samples. **Settings → Instrument sound** has four presets: **Electric piano** (default, a classic '80s FM e-piano with chorus), **Analog poly** (a warm, chorused vintage polysynth), **Soft piano**, and **Acid** (the original bright saws with a resonant bass). Each one has a preview button. The presets are level-matched, and the master chain (compressor, hard-knee limiter, soft clip) keeps them loud enough for phone speakers without distorting.
 - **The sequencers are monophonic**, with one note per step per part. Note lengths are 1/16, 1/8, 1/4 and 1/2. There is no velocity, slide or accent editing yet. MIDI export uses fixed velocities.
 - **No MIDI input** from hardware controllers (Web MIDI) yet.
 - **Worlds 4–7** have introductory lessons with representative exercises (as specified), not full depth.

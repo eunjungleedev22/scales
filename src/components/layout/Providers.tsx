@@ -13,6 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       useUI.getState().setHydrated();
       useProgress.getState().touch();
       audio.setVolume(useSettings.getState().volume);
+      audio.setPreset(useSettings.getState().tonePreset ?? "epiano");
       document.documentElement.lang = useSettings.getState().lang;
     });
     // Download the audio library right away, then start sound on any tap/click/key.
@@ -25,6 +26,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     events.forEach((ev) => window.addEventListener(ev, unlock, { capture: true, passive: true }));
     const unsub = useSettings.subscribe((s) => {
       audio.setVolume(s.volume);
+      if (s.tonePreset && s.tonePreset !== audio.preset) audio.setPreset(s.tonePreset);
       document.documentElement.lang = s.lang;
     });
     const onHide = () => {

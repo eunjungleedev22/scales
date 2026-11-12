@@ -8,6 +8,7 @@ import type { Instrument, NoteEvent } from "@/lib/music/events";
 import { midiToFrequency } from "@/lib/theory/notes";
 
 type ToneNS = typeof import("tone");
+export type TonePreset = "epiano" | "analog" | "piano" | "acid";
 export type AudioStatus = "idle" | "loading" | "ready" | "error";
 
 interface PlayOptions {
@@ -243,50 +244,211 @@ class AudioEngine {
     return this.status === "ready" && this.contextState() === "running";
   }
 
+  private buses: { comp?: any; reverb?: any; chorus?: any } = {};
+  private tonal: any[] = [];
+  preset: TonePreset = "epiano";
+
+  /** Master chain + drums (shared by all presets), then the preset's tonal instruments. */
   private build(Tone: ToneNS) {
     Tone.getDestination().volume.value = this.volumeDb;
     // Master chain: glue compressor -> make-up gain -> brickwall limiter (loud enough for phone speakers, never clips)
-    const limiter = new Tone.Limiter(-1).toDestination();
-    const makeup = new Tone.Gain(Tone.dbToGain(9)).connect(limiter);
+    // Final safety: smooth tanh soft-clip so fast attacks can never exceed full scale
+    const softClip = new Tone.WaveShaper((x) => Math.tanh(x * 1.1) / Math.tanh(1.1), 2048).toDestination();
+    // Hard-knee limiter (Tone.Limiter keeps the browser default 30 dB soft knee, which barely limits)
+    const limiter = new Tone.Compressor({ threshold: -3, ratio: 20, knee: 0, attack: 0.001, release: 0.08 }).connect(softClip);
+    const makeup = new Tone.Gain(Tone.dbToGain(3)).connect(limiter);
     const comp = new Tone.Compressor({ threshold: -20, ratio: 3, attack: 0.005, release: 0.15 }).connect(makeup);
-    const reverb = new Tone.Freeverb({ roomSize: 0.6, dampening: 3000, wet: 0.18 }).connect(comp);
+    const reverb = new Tone.Freeverb({ roomSize: 0.62, dampening: 2800, wet: 0.2 }).connect(comp);
+    const chorus = new Tone.Chorus({ frequency: 0.8, delayTime: 3.5, depth: 0.6, wet: 0.5 }).connect(reverb).start();
+    this.buses = { comp, reverb, chorus };
+    (this as unknown as { _limiter: unknown })._limiter = limiter; // diagnostics
 
-    const keysFilter = new Tone.Filter(4200, "lowpass").connect(reverb);
-    this.inst.keys = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "fatsawtooth", count: 2, spread: 14 },
-      envelope: { attack: 0.005, decay: 0.35, sustain: 0.35, release: 0.7 },
-      volume: -6,
-    }).connect(keysFilter);
-    this.inst.keys.maxPolyphony = 32;
-
-    const padFilter = new Tone.Filter(2400, "lowpass").connect(reverb);
-    this.inst.pad = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "fattriangle", count: 3, spread: 20 },
-      envelope: { attack: 0.25, decay: 0.4, sustain: 0.7, release: 1.2 },
-      volume: -6,
-    }).connect(padFilter);
-
-    this.inst.bass = new Tone.MonoSynth({
-      oscillator: { type: "sawtooth" },
-      filter: { Q: 5, type: "lowpass", rolloff: -24 },
-      envelope: { attack: 0.004, decay: 0.2, sustain: 0.5, release: 0.08 },
-      filterEnvelope: { attack: 0.002, decay: 0.18, sustain: 0.25, release: 0.2, baseFrequency: 140, octaves: 3.2 },
-      volume: -3,
-    }).connect(comp);
-
-    const leadFilter = new Tone.Filter(3200, "lowpass").connect(reverb);
-    this.inst.lead = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "square" },
-      envelope: { attack: 0.005, decay: 0.15, sustain: 0.3, release: 0.25 },
-      volume: -10,
-    }).connect(leadFilter);
-
-    this.inst.kick = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 6, envelope: { attack: 0.001, decay: 0.35, sustain: 0 }, volume: 0 }).connect(comp);
-    const hatFilter = new Tone.Filter(8000, "highpass").connect(comp);
-    this.inst.hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0 }, volume: -14 }).connect(hatFilter);
-    const clapFilter = new Tone.Filter(1500, "bandpass").connect(reverb);
+    // Drums (classic drum-machine style)
+    this.inst.kick = new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 5, envelope: { attack: 0.001, decay: 0.4, sustain: 0 }, volume: 0 }).connect(comp);
+    const hatFilter = new Tone.Filter(7500, "highpass").connect(comp);
+    this.inst.hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.045, sustain: 0 }, volume: -15 }).connect(hatFilter);
+    const clapFilter = new Tone.Filter(1400, "bandpass").connect(reverb);
     this.inst.clap = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.002, decay: 0.16, sustain: 0 }, volume: -4 }).connect(clapFilter);
     this.inst.click = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.01 }, volume: -6 }).connect(comp);
+
+    this.buildTonal(Tone, this.preset);
+  }
+
+  /** Keys, pad, bass and lead for a tone preset. Safe to call again to swap presets live. */
+  private buildTonal(Tone: ToneNS, preset: TonePreset) {
+    const { comp, reverb, chorus } = this.buses;
+    if (!comp) return;
+    for (const node of this.tonal) {
+      try {
+        node.dispose();
+      } catch {
+        /* already disposed */
+      }
+    }
+    this.tonal = [];
+    const keep = <T,>(n: T) => {
+      this.tonal.push(n);
+      return n;
+    };
+
+    if (preset === "epiano") {
+      // '80s FM electric piano: bell-like tine attack that mellows out, through chorus
+      const eq = keep(new Tone.Filter(5200, "lowpass").connect(chorus));
+      this.inst.keys = keep(
+        new Tone.PolySynth(Tone.FMSynth, {
+          harmonicity: 1,
+          modulationIndex: 6,
+          oscillator: { type: "sine" },
+          modulation: { type: "sine" },
+          envelope: { attack: 0.002, decay: 1.6, sustain: 0.25, release: 1.1 },
+          modulationEnvelope: { attack: 0.002, decay: 0.35, sustain: 0.12, release: 0.6 },
+          volume: -19,
+        }).connect(eq),
+      );
+      this.inst.pad = keep(
+        new Tone.PolySynth(Tone.FMSynth, {
+          harmonicity: 1,
+          modulationIndex: 2.5,
+          envelope: { attack: 0.08, decay: 2.2, sustain: 0.45, release: 1.4 },
+          modulationEnvelope: { attack: 0.05, decay: 0.8, sustain: 0.2, release: 1 },
+          volume: -16,
+        }).connect(eq),
+      );
+      const bassFilter = keep(new Tone.Filter(900, "lowpass").connect(comp));
+      this.inst.bass = keep(
+        new Tone.MonoSynth({
+          oscillator: { type: "fmsine", modulationIndex: 1.2, harmonicity: 1 } as any,
+          filter: { Q: 0.7, type: "lowpass", rolloff: -12 },
+          envelope: { attack: 0.005, decay: 0.3, sustain: 0.7, release: 0.15 },
+          filterEnvelope: { attack: 0.005, decay: 0.25, sustain: 0.6, release: 0.2, baseFrequency: 220, octaves: 1.5 },
+          volume: -6,
+        }).connect(bassFilter),
+      );
+      this.inst.lead = keep(
+        new Tone.PolySynth(Tone.FMSynth, {
+          harmonicity: 2,
+          modulationIndex: 3,
+          envelope: { attack: 0.004, decay: 0.5, sustain: 0.3, release: 0.4 },
+          modulationEnvelope: { attack: 0.004, decay: 0.25, sustain: 0.1, release: 0.3 },
+          volume: -23,
+        }).connect(chorus),
+      );
+    } else if (preset === "analog") {
+      // Vintage analog polysynth: detuned saws, gentle low-pass, lush chorus
+      const keysFilter = keep(new Tone.Filter({ frequency: 2200, type: "lowpass", rolloff: -24, Q: 0.5 }).connect(chorus));
+      this.inst.keys = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "fatsawtooth", count: 2, spread: 10 },
+          envelope: { attack: 0.01, decay: 0.6, sustain: 0.5, release: 0.8 },
+          volume: -8,
+        }).connect(keysFilter),
+      );
+      const padFilter = keep(new Tone.Filter({ frequency: 1500, type: "lowpass", rolloff: -24 }).connect(chorus));
+      this.inst.pad = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "fatsawtooth", count: 3, spread: 18 },
+          envelope: { attack: 0.35, decay: 0.5, sustain: 0.8, release: 1.5 },
+          volume: -13,
+        }).connect(padFilter),
+      );
+      this.inst.bass = keep(
+        new Tone.MonoSynth({
+          oscillator: { type: "square" },
+          filter: { Q: 1, type: "lowpass", rolloff: -24 },
+          envelope: { attack: 0.005, decay: 0.25, sustain: 0.6, release: 0.12 },
+          filterEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.4, release: 0.2, baseFrequency: 180, octaves: 2 },
+          volume: -9.5,
+        }).connect(comp),
+      );
+      const leadFilter = keep(new Tone.Filter(2600, "lowpass").connect(chorus));
+      this.inst.lead = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "pulse", width: 0.35 } as any,
+          envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.4 },
+          volume: -13,
+        }).connect(leadFilter),
+      );
+    } else if (preset === "piano") {
+      // Soft piano-like tone: decaying additive partials, a touch of room
+      const partials = [1, 0.42, 0.26, 0.12, 0.08, 0.04, 0.02];
+      const tone = keep(new Tone.Filter(4500, "lowpass").connect(reverb));
+      this.inst.keys = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "custom", partials } as any,
+          envelope: { attack: 0.002, decay: 2.2, sustain: 0.0, release: 1.2 },
+          volume: -16,
+        }).connect(tone),
+      );
+      this.inst.pad = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "custom", partials: [1, 0.3, 0.15, 0.05] } as any,
+          envelope: { attack: 0.06, decay: 3, sustain: 0.25, release: 1.6 },
+          volume: -16,
+        }).connect(tone),
+      );
+      this.inst.bass = keep(
+        new Tone.MonoSynth({
+          oscillator: { type: "custom", partials: [1, 0.5, 0.25, 0.12] } as any,
+          filter: { Q: 0.5, type: "lowpass" },
+          envelope: { attack: 0.004, decay: 0.8, sustain: 0.35, release: 0.3 },
+          filterEnvelope: { attack: 0.004, decay: 0.4, sustain: 0.5, release: 0.3, baseFrequency: 300, octaves: 1.5 },
+          volume: -6,
+        }).connect(comp),
+      );
+      this.inst.lead = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "custom", partials: [1, 0.35, 0.18, 0.08] } as any,
+          envelope: { attack: 0.002, decay: 1.2, sustain: 0.1, release: 0.8 },
+          volume: -10,
+        }).connect(tone),
+      );
+    } else {
+      // Acid (the original sound): bright detuned saws and a resonant squelchy bass
+      const keysFilter = keep(new Tone.Filter(4200, "lowpass").connect(reverb));
+      this.inst.keys = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "fatsawtooth", count: 2, spread: 14 },
+          envelope: { attack: 0.005, decay: 0.35, sustain: 0.35, release: 0.7 },
+          volume: -5,
+        }).connect(keysFilter),
+      );
+      const padFilter = keep(new Tone.Filter(2400, "lowpass").connect(reverb));
+      this.inst.pad = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "fattriangle", count: 3, spread: 20 },
+          envelope: { attack: 0.25, decay: 0.4, sustain: 0.7, release: 1.2 },
+          volume: -13,
+        }).connect(padFilter),
+      );
+      this.inst.bass = keep(
+        new Tone.MonoSynth({
+          oscillator: { type: "sawtooth" },
+          filter: { Q: 5, type: "lowpass", rolloff: -24 },
+          envelope: { attack: 0.004, decay: 0.2, sustain: 0.5, release: 0.08 },
+          filterEnvelope: { attack: 0.002, decay: 0.18, sustain: 0.25, release: 0.2, baseFrequency: 140, octaves: 3.2 },
+          volume: -12,
+        }).connect(comp),
+      );
+      const leadFilter = keep(new Tone.Filter(3200, "lowpass").connect(reverb));
+      this.inst.lead = keep(
+        new Tone.PolySynth(Tone.Synth, {
+          oscillator: { type: "square" },
+          envelope: { attack: 0.005, decay: 0.15, sustain: 0.3, release: 0.25 },
+          volume: -9,
+        }).connect(leadFilter),
+      );
+    }
+    for (const k of ["keys", "pad", "lead"] as const) if (this.inst[k]) this.inst[k].maxPolyphony = 32;
+  }
+
+  /** Switch the instrument sound (keys, pads, bass, lead). Drums stay the same. */
+  setPreset(preset: TonePreset) {
+    if (preset === this.preset && this.tonal.length) return;
+    this.preset = preset;
+    if (this.Tone && this.bound && this.buses.comp) {
+      this.stop();
+      this.buildTonal(this.Tone, preset);
+    }
   }
 
   setVolume(v: number) {
