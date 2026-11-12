@@ -17,6 +17,10 @@ export interface SettingsState {
   koreanTerms: boolean;
   /** Instrument sound for keys, pads, bass and lead */
   tonePreset: TonePreset;
+  /** Read intros / concepts aloud */
+  narration: boolean;
+  narrationRate: number;
+  narrationVoice: string | null;
   set: (p: Partial<Omit<SettingsState, "set">>) => void;
 }
 
@@ -33,6 +37,9 @@ export const useSettings = create<SettingsState>()(
       breakReminderMinutes: 50,
       koreanTerms: true,
       tonePreset: "epiano",
+      narration: true,
+      narrationRate: 1,
+      narrationVoice: null,
       set: (p) => set(p),
     }),
     { name: "harmonic-cat-settings", version: 1, storage: createJSONStorage(() => localStorage), skipHydration: true },

@@ -13,6 +13,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { BackupCard } from "@/components/settings/BackupCard";
 import { SoundCheck } from "@/components/settings/SoundCheck";
 import { TonePicker } from "@/components/settings/TonePicker";
+import { VoiceoverCard } from "@/components/settings/VoiceoverCard";
 
 export default function SettingsPage() {
   const s = useSettings();
@@ -96,6 +97,8 @@ export default function SettingsPage() {
       </Card>
 
       <TonePicker />
+
+      <VoiceoverCard />
 
       <SoundCheck />
 

@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { GlossaryEntry, segmentText } from "@/content/glossary";
 import { loc, Localized } from "@/lib/exercises/types";
 import { useSettings } from "@/store/settings";
+import { Volume2 } from "lucide-react";
+import { primeSpeech, speak, speechSupported } from "@/lib/audio/speech";
 
 /** One annotated term: English word + small Korean word; tap/hover for the Korean definition. */
 function Term({ text, entry }: { text: string; entry: GlossaryEntry }) {
@@ -66,6 +68,20 @@ export function KeyTerms({ entries }: { entries: GlossaryEntry[] }) {
           <span lang="ko" className="font-bold text-pink">
             {e.ko}
           </span>
+          {speechSupported() && (
+            <button
+              onClick={async () => {
+                primeSpeech();
+                const s = useSettings.getState();
+                await speak(e.terms[0], { rate: s.narrationRate ?? 1, voiceURI: s.narrationVoice });
+                await speak(e.ko.replace(/\(.*?\)/g, ""), { lang: "ko", rate: (s.narrationRate ?? 1) * 0.95 });
+              }}
+              aria-label={`Hear ${e.terms[0]} and ${e.ko}`}
+              className="ml-1.5 inline-flex translate-y-[2px] text-muted-foreground hover:text-pink"
+            >
+              <Volume2 className="size-3.5" />
+            </button>
+          )}
           <p lang="ko" className="mt-0.5 max-w-64 text-xs text-muted-foreground">
             {e.def}
           </p>

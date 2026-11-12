@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen } from "lucide-react";
+import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen, Volume2 } from "lucide-react";
 import type { Lesson } from "@/content/curriculum";
 import { getWorld, nextLesson } from "@/content/curriculum";
 import { instantiate } from "@/lib/exercises/instantiate";
@@ -21,6 +21,8 @@ import { GlossaryText, KeyTerms } from "@/components/glossary/GlossaryText";
 import { introFor, youtubeSearchUrl } from "@/content/intros";
 import { termsIn } from "@/content/glossary";
 import { loc } from "@/lib/exercises/types";
+import { primeSpeech, speak, speechSupported, toSpeech, cancelSpeech } from "@/lib/audio/speech";
+import { useSettings } from "@/store/settings";
 import { cn } from "@/lib/utils";
 
 type Phase = "intro" | "exercises" | "done";
@@ -53,6 +55,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
 
   const start = () => {
     audio.stop();
+    cancelSpeech();
     xpAtStart.current = useProgress.getState().xp;
     setOutcomes([]);
     setIndex(0);
@@ -156,11 +159,28 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
                 </li>
               ))}
             </ul>
+            <div className="mt-4 flex flex-wrap gap-2">
+            {speechSupported() && (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  primeSpeech();
+                  const st = useSettings.getState();
+                  for (const c of lesson.concept) {
+                    const r = await speak(toSpeech(en(c)), { rate: st.narrationRate ?? 1, voiceURI: st.narrationVoice });
+                    if (r === "cancelled") break;
+                  }
+                }}
+              >
+                <Volume2 /> Listen
+              </Button>
+            )}
             {lesson.demo && (
-              <Button variant="pink" className="mt-4" onClick={() => playCue(lesson.demo!.cue)}>
+              <Button variant="pink" onClick={() => playCue(lesson.demo!.cue)}>
                 <Play /> {t("demo")}: {en(lesson.demo.label)}
               </Button>
             )}
+            </div>
           </div>
           {keyTerms.length > 0 && (
             <div>
@@ -180,7 +200,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
             <MonitorPlay className="size-4 text-[#ff4d3d]" /> More video lessons on YouTube: “{ytQuery}” ↗
           </a>
           <div className="flex flex-wrap gap-2">
-            <Button size="lg" variant="lime" onClick={start} autoFocus>
+            <Button size="lg" variant="lime" onClick={start}>
               {lesson.exercises.length} exercises <ArrowRight /> <Kbd className="border-black/20 bg-black/15 text-current">Enter</Kbd>
             </Button>
             {!progress.lessons[lesson.id] && (
