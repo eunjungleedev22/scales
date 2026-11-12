@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart3, Ear, FlaskConical, Home, Map, Settings, Shapes, Dumbbell, Minimize2, Loader2, NotebookPen } from "lucide-react";
+import { BarChart3, Ear, FlaskConical, Home, Map, Settings, Shapes, Dumbbell, Minimize2, Loader2, NotebookPen, Menu, Volume2, X } from "lucide-react";
 import { useUI } from "@/store/ui";
 import { useSettings } from "@/store/settings";
 import { useProgress } from "@/store/progress";
@@ -21,7 +21,7 @@ const NAV: Array<{ href: string; key: DictKey; short?: string; mobile?: boolean;
   { href: "/learn", key: "nav_learn", mobile: true, icon: Map },
   { href: "/practice", key: "nav_practice", mobile: true, icon: Dumbbell },
   { href: "/ear-training", key: "nav_ear", short: "Ear", mobile: true, icon: Ear },
-  { href: "/playground", key: "nav_playground", short: "Play", mobile: true, icon: Shapes },
+  { href: "/playground", key: "nav_playground", short: "Play", icon: Shapes },
   { href: "/lab", key: "nav_lab", short: "Lab", mobile: true, icon: FlaskConical },
   { href: "/reflect", key: "nav_reflect", icon: NotebookPen },
   { href: "/progress", key: "nav_progress", icon: BarChart3 },
@@ -71,9 +71,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang } = useT();
   const lvl = levelFromXp(xp);
 
-  // Stop audio when navigating between pages
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  // Stop audio (and close the mobile "More" sheet) when navigating between pages
   useEffect(() => {
     audio.stop();
+    setMoreOpen(false);
   }, [pathname]);
 
   // Shift+F toggles focus mode anywhere
@@ -157,6 +160,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="flex-1" />
           <AudioPill />
+          <Link href="/settings" aria-label={t("nav_settings")} className={cn("rounded-md border border-border p-1.5 text-muted-foreground md:hidden", isActive("/settings") && "border-primary text-primary")}>
+            <Settings className="size-4" />
+          </Link>
           <span className="whitespace-nowrap rounded-md border border-border bg-[#0f0e0c] px-2.5 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             <span className="hidden sm:inline">Lv {String(lvl.level).padStart(2, "0")} · </span>
             <span className="text-lime">{xpReadout} XP</span>
@@ -176,7 +182,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </AnimatePresence>
         </main>
 
-        {/* Bottom nav (mobile) */}
+        {/* Bottom nav (mobile): 5 main tabs + More */}
         {!focus && (
           <nav aria-label="Main mobile" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-border bg-[#171512]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
             {NAV.filter((n) => n.mobile).map((n) => (
@@ -189,7 +195,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="w-full truncate text-center">{lang === "en" && n.short ? n.short : t(n.key).split(" ")[0]}</span>
               </Link>
             ))}
+            {(() => {
+              const moreActive = NAV.some((n) => !n.mobile && isActive(n.href));
+              return (
+                <button
+                  onClick={() => setMoreOpen((o) => !o)}
+                  aria-expanded={moreOpen}
+                  aria-controls="mobile-more"
+                  className={cn("flex min-w-0 flex-col items-center gap-1 border-t-2 border-transparent py-2 font-mono text-[9.5px] font-medium uppercase tracking-wider text-muted-foreground", (moreActive || moreOpen) && "border-primary text-foreground")}
+                >
+                  <Menu className={cn("size-[18px]", (moreActive || moreOpen) && "text-primary")} />
+                  <span>More</span>
+                </button>
+              );
+            })()}
           </nav>
+        )}
+        {!focus && moreOpen && (
+          <div className="fixed inset-0 z-30 bg-black/60 md:hidden" onClick={() => setMoreOpen(false)}>
+            <div
+              id="mobile-more"
+              role="dialog"
+              aria-label="More"
+              onClick={(e) => e.stopPropagation()}
+              className="panel absolute inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] overflow-hidden"
+            >
+              <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+                <span className="label">More</span>
+                <button onClick={() => setMoreOpen(false)} aria-label="Close" className="p-1 text-muted-foreground">
+                  <X className="size-4" />
+                </button>
+              </div>
+              {[
+                ...NAV.filter((n) => !n.mobile).map((n) => ({ href: n.href, label: t(n.key), icon: n.icon })),
+                { href: "/settings#sound-check", label: "Sound check", icon: Volume2 },
+              ].map((item) => (
+                <Link key={item.href} href={item.href} className={cn("flex items-center gap-3 border-b border-border px-4 py-3.5 text-sm font-semibold last:border-b-0", isActive(item.href.split("#")[0]) && !item.href.includes("#") && "text-primary")}>
+                  <item.icon className="size-4 text-muted-foreground" /> {item.label}
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
       </div>
       <Toasts />

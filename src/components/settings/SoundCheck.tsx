@@ -15,6 +15,11 @@ export function SoundCheck() {
   const [results, setResults] = useState<Record<string, Result>>({ raw: "untested", synth: "untested", media: "untested" });
   const [copied, setCopied] = useState(false);
 
+  // Jump straight here when opened via /settings#sound-check
+  useEffect(() => {
+    if (window.location.hash === "#sound-check") setTimeout(() => document.getElementById("sound-check")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150);
+  }, []);
+
   // refresh the live readout
   useEffect(() => {
     const id = setInterval(() => force((n) => n + 1), 500);
@@ -77,7 +82,7 @@ export function SoundCheck() {
     ].join("\n");
 
   return (
-    <Card id="sound-check">
+    <Card id="sound-check" className="scroll-mt-16">
       <CardHeader>
         <CardTitle>
           <span>♪</span> Sound check
