@@ -109,7 +109,7 @@ export function ProgressionBuilder() {
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Colours: <span className="text-lime">tonic</span> · <span className="text-[#36c5ff]">predominant</span> · <span className="text-pink">dominant</span> · <span className="text-[#b45cff]">modal</span> · <span className="text-[#ffb347]">chromatic / borrowed</span>
+        Colours: <span className="text-lime">tonic</span> · <span className="text-[#46b7a5]">predominant</span> · <span className="text-pink">dominant</span> · <span className="text-[#c9a0dc]">modal</span> · <span className="text-[#e07a5f]">chromatic / borrowed</span>
       </p>
     </div>
   );

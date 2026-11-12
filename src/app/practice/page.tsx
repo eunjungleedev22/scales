@@ -64,14 +64,14 @@ function PracticeInner() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-3xl font-black">{t("nav_practice")}</h1>
+        <h1 className="display text-4xl sm:text-5xl">{t("nav_practice")}</h1>
         <p className="text-muted-foreground">Pick anything. Stop anytime. Nothing expires.</p>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ModeCard href="/practice?mode=quick" icon={Dumbbell} title={t("quickPractice")} desc="5 mixed drills, about 3 minutes." color="#c6ff3d" />
-        <ModeCard href="/practice?mode=deep" icon={Waves} title={t("deepDive")} desc="Endless adaptive session for 2–4 hour hyperfocus blocks. Timer, optional break nudges, pause anytime." color="#a855f7" />
-        <ModeCard href="/practice?mode=review" icon={RefreshCcw} title={t("review")} desc="Optional: revisit exercises you found tricky." color="#36c5ff" />
-        <ModeCard href="/practice?mode=placement" icon={FastForward} title={t("placementTest")} desc="12 questions. Skip whole worlds you already know." color="#ff4fa3" />
+        <ModeCard href="/practice?mode=quick" icon={Dumbbell} title={t("quickPractice")} desc="5 mixed drills, about 3 minutes." color="#f5c542" />
+        <ModeCard href="/practice?mode=deep" icon={Waves} title={t("deepDive")} desc="Endless adaptive session for 2–4 hour hyperfocus blocks. Timer, optional break nudges, pause anytime." color="#ff5c1a" />
+        <ModeCard href="/practice?mode=review" icon={RefreshCcw} title={t("review")} desc="Optional: revisit exercises you found tricky." color="#46b7a5" />
+        <ModeCard href="/practice?mode=placement" icon={FastForward} title={t("placementTest")} desc="12 questions. Skip whole worlds you already know." color="#ff5c1a" />
       </div>
       <Card>
         <CardHeader>
@@ -95,7 +95,7 @@ function PracticeInner() {
 
 function ModeCard({ href, icon: Icon, title, desc, color }: { href: string; icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color: string }) {
   return (
-    <Link href={href} className="flex gap-4 rounded-3xl border-2 border-border bg-card p-5 transition-transform hover:-translate-y-1">
+    <Link href={href} className="flex gap-4 rounded-3xl border border-border bg-card p-5 transition-transform hover:-translate-y-1">
       <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: `${color}22`, color }}>
         <Icon className="size-6" />
       </span>
@@ -173,7 +173,7 @@ function Placement() {
           setDone();
         }, 0);
         return (
-          <div className="rounded-2xl border-2 border-border bg-card p-4 text-left text-sm">
+          <div className="rounded-2xl border border-border bg-card p-4 text-left text-sm">
             {skip.length ? (
               <p>
                 You tested out of <b>World {skip.join(", ")}</b>. Those lessons are marked as skipped — revisit anytime. Boss challenges stay open if you want the XP.

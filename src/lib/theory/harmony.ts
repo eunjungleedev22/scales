@@ -123,8 +123,8 @@ export function progressionFromDegrees(tonic: string, scale: ScaleId, degrees: n
 }
 
 export const FUNCTION_COLORS: Record<HarmonicFunction, string> = {
-  tonic: "#c6ff3d",
-  predominant: "#36c5ff",
-  dominant: "#ff4fa3",
-  modal: "#b45cff",
+  tonic: "#f5c542",
+  predominant: "#46b7a5",
+  dominant: "#ff5c1a",
+  modal: "#c9a0dc",
 };

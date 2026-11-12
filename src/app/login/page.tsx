@@ -30,7 +30,7 @@ function LoginForm() {
     setBusy(false);
   };
 
-  const input = "h-12 w-full rounded-2xl border-2 border-border bg-secondary px-4 text-base font-semibold focus-visible:border-primary focus-visible:outline-none";
+  const input = "h-12 w-full rounded-2xl border border-border bg-secondary px-4 text-base font-semibold focus-visible:border-primary focus-visible:outline-none";
   return (
     <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3">
       <label className="flex flex-col gap-1 text-sm font-bold">
@@ -53,7 +53,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-5 px-4">
       <Cat mood="idle" size={110} />
-      <h1 className="text-3xl font-black">
+      <h1 className="display text-3xl sm:text-5xl">
         Harmonic<span className="text-lime">Cat</span>
       </h1>
       <Suspense>

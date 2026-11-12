@@ -99,18 +99,18 @@ export function sameSet(a: PitchClass[], b: PitchClass[]): boolean {
 
 /** Twelve note colors (one per pitch class) used consistently across the UI. */
 export const NOTE_COLORS: string[] = [
-  "#ff4d6d", // C
-  "#ff7b54", // C#
-  "#ffb347", // D
-  "#ffd23f", // D#
-  "#c6ff3d", // E
-  "#5ef08a", // F
-  "#2ee6c5", // F#
-  "#36c5ff", // G
-  "#5b8cff", // G#
-  "#8b6cff", // A
-  "#b45cff", // A#
-  "#ff4fd8", // B
+  "#e8553a", // C
+  "#ec7a3c", // C#
+  "#f0a040", // D
+  "#f2c447", // D#
+  "#cfc552", // E
+  "#97c05e", // F
+  "#5db47f", // F#
+  "#46ab9e", // G
+  "#4b96b8", // G#
+  "#6a82c6", // A
+  "#9474c2", // A#
+  "#c46a9c", // B
 ];
 
 export function noteColor(pcOrMidi: number): string {

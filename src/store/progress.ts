@@ -5,6 +5,23 @@ import { ALL_LESSONS, WORLDS } from "@/content/curriculum";
 import { BOSS_BONUS, ExerciseStat, LESSON_BONUS, PERFECT_BONUS, xpForAttempt, AttemptInfo } from "@/lib/progress/xp";
 import { useUI } from "./ui";
 
+/** One answered exercise (kept for reflections; capped). */
+export interface ActivityEntry {
+  t: number;
+  id: string;
+  correct: boolean;
+  firstTry: boolean;
+}
+
+export interface SavedReflection {
+  id: string;
+  createdAt: number;
+  title: string;
+  /** Plain-text notes (summary + answers) */
+  notes: string;
+  answers: Record<string, string>;
+}
+
 export interface LessonRecord {
   completedAt: number;
   bestScore: number; // 0..1 first-try accuracy
@@ -24,6 +41,11 @@ interface ProgressState {
   placementDone: boolean;
   totalAnswered: number;
   labFlags: { progression: boolean; bass: boolean; melody: boolean };
+  log: ActivityEntry[];
+  reflections: SavedReflection[];
+  lastReflectionAt: number | null;
+  saveReflection: (r: SavedReflection) => void;
+  deleteReflection: (id: string) => void;
 
   recordAttempt: (exerciseId: string, info: AttemptInfo & { ear?: boolean }) => number;
   completeLesson: (lessonId: string, firstTryRate: number) => number;
@@ -51,7 +73,12 @@ const initial = {
   placementDone: false,
   totalAnswered: 0,
   labFlags: { progression: false, bass: false, melody: false },
+  log: [] as ActivityEntry[],
+  reflections: [] as SavedReflection[],
+  lastReflectionAt: null as number | null,
 };
+
+const LOG_CAP = 3000;
 
 export const useProgress = create<ProgressState>()(
   persist(
@@ -74,7 +101,15 @@ export const useProgress = create<ProgressState>()(
           lastSeen: Date.now(),
         };
         const earStreak = info.ear ? (info.correct ? get().earStreak + 1 : 0) : get().earStreak;
-        set((s) => ({ xp: s.xp + xp, stats: { ...s.stats, [exerciseId]: stat }, earStreak, totalAnswered: s.totalAnswered + 1, lastActive: Date.now() }));
+        const entry: ActivityEntry = { t: Date.now(), id: exerciseId, correct: info.correct, firstTry: info.firstTry };
+        set((s) => ({
+          xp: s.xp + xp,
+          stats: { ...s.stats, [exerciseId]: stat },
+          earStreak,
+          totalAnswered: s.totalAnswered + 1,
+          lastActive: Date.now(),
+          log: [...(s.log ?? []).slice(-(LOG_CAP - 1)), entry],
+        }));
         const u = get().unlock;
         if (info.correct) u("first-purr");
         if (info.correct && !info.firstTry) u("nine-lives");
@@ -137,6 +172,8 @@ export const useProgress = create<ProgressState>()(
         if (k === "bass") get().unlock("acid-kitty");
         if (labFlags.progression && labFlags.bass && labFlags.melody) get().unlock("composer");
       },
+      saveReflection: (r) => set((s) => ({ reflections: [r, ...(s.reflections ?? []).filter((x) => x.id !== r.id)].slice(0, 60), lastReflectionAt: r.createdAt })),
+      deleteReflection: (id) => set((s) => ({ reflections: (s.reflections ?? []).filter((x) => x.id !== id) })),
       reset: () => set({ ...initial }),
     }),
     { name: "harmonic-cat-progress", version: 1, storage: createJSONStorage(() => localStorage), skipHydration: true },

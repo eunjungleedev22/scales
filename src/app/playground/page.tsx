@@ -23,7 +23,7 @@ export default function PlaygroundPage() {
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-3xl font-black">{t("nav_playground")}</h1>
+        <h1 className="display text-4xl sm:text-5xl">{t("nav_playground")}</h1>
         <p className="text-muted-foreground">No right answers here — just explore and listen.</p>
       </div>
       <div role="tablist" aria-label="Playground tools" className="no-scrollbar flex gap-2 overflow-x-auto">
@@ -33,13 +33,13 @@ export default function PlaygroundPage() {
             role="tab"
             aria-selected={tab === x.id}
             onClick={() => setTab(x.id)}
-            className={cn("flex shrink-0 items-center gap-2 rounded-2xl border-2 border-border px-4 py-2 text-sm font-bold", tab === x.id ? "border-primary bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-secondary")}
+            className={cn("flex shrink-0 items-center gap-2 rounded-2xl border border-border px-4 py-2 text-sm font-bold", tab === x.id ? "border-primary bg-primary/20 text-foreground" : "text-muted-foreground hover:bg-secondary")}
           >
             <x.icon className="size-4" /> {x.label}
           </button>
         ))}
       </div>
-      <div role="tabpanel" className="rounded-[2rem] border-2 border-border bg-card/60 p-4 sm:p-6">
+      <div role="tabpanel" className="rounded-lg border border-border bg-card/60 p-4 sm:p-6">
         {tab === "scales" && <ScaleExplorer />}
         {tab === "chords" && <ChordExplorer />}
         {tab === "progressions" && <ProgressionBuilder />}

@@ -3,7 +3,7 @@
 **Interactive, gamified music theory for electronic music producers.**
 Learn → Hear → Experiment → Apply → Compose, in short exercises that give feedback right away. Every concept points back to something you can make in Ableton Live.
 
-- Dark-mode-first, playful UI with an original black-cat mascot ("Midi") wearing headphones
+- "Studio hardware" design: warm charcoal panels, cream silkscreen text, a signal-orange accent with amber LED highlights, expanded grotesk headings (Archivo) with mono labels (IBM Plex Mono), tight corners, sequencer-pad skill tree and segmented LED meters. The mascot is an original black cat ("Midi") wearing headphones.
 - English UI by default, with a Korean toggle (Settings → Language)
 - Runs fully offline after `npm install`: no backend, no accounts, no paid APIs. Progress is saved in `localStorage`.
 
@@ -52,6 +52,19 @@ Every page asks you to sign in once, and the session lasts a year. Sign out is i
 | **Composition Lab** | Tempo, key and scale, chord progression editor, bassline and melody sequencers (4, 8 or 16 bars, with an "expand with variation" option), drums or metronome, mute, **MIDI export**, and **Generate exercises from your project** |
 | **Progress** | Level and XP, mastery stars per lesson, cat-themed achievements |
 | **Settings** | Language (EN/KO), note names, solfège labels, sharps or flats, focus mode, reduced motion, break reminder, volume, reset |
+
+### Reflect (on demand)
+
+**Reflect** (sidebar, dashboard tile D, or the optional button on a finished lesson) generates a reflective session from what you actually practised. It's never forced. Scopes: this lesson, since your last reflection, today, last 7 days, or everything. Each session has:
+
+- summary notes, from the lessons you touched
+- key terms (with their Korean words)
+- *Going well* and *Worth another look*
+- 2–3 "in your own words" questions
+- a quick re-check of the exercises you missed
+- a studio task
+
+Save it to your journal, or download it as Markdown notes. Sessions are built from a local activity log and lesson content, without any AI service. The code is in `src/lib/reflection/generate.ts`, which is tested.
 
 ### Lesson intros & Korean term hints
 

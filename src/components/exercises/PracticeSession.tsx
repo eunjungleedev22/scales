@@ -73,7 +73,7 @@ export function PracticeSession({ title, nextExercise, total, timed, onFinish, e
     return (
       <div className="mx-auto flex max-w-xl flex-col items-center gap-4 text-center">
         <Cat mood="party" size={130} />
-        <h1 className="text-3xl font-black">{title} — done!</h1>
+        <h1 className="display text-4xl sm:text-5xl">{title} — done!</h1>
         <p className="text-muted-foreground">
           {solved}/{history.length} solved · +{xpNow - xpStart.current} XP
           {timed && ` · ${minutes} ${t("minutes")}`}
@@ -108,7 +108,7 @@ export function PracticeSession({ title, nextExercise, total, timed, onFinish, e
           </div>
         )}
         {timed && (
-          <span className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-xs font-bold tabular-nums">
+          <span className="flex items-center gap-1 readout rounded-md border border-border bg-[#0f0e0c] px-2.5 py-1 text-xs">
             <Timer className="size-3.5" />
             {String(Math.floor(elapsed / 3600)).padStart(1, "0")}:{String(minutes % 60).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
           </span>

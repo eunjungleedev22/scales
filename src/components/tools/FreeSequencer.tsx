@@ -63,7 +63,7 @@ export function FreeSequencer() {
         </Button>
         <div className="flex items-center gap-1 rounded-xl bg-secondary p-1 text-xs font-bold">
           {[1, 2, 4].map((l) => (
-            <button key={l} onClick={() => setLen(l)} className={cn("rounded-lg px-2 py-1", len === l && "bg-primary text-white")}>{l === 1 ? "1/16" : l === 2 ? "1/8" : "1/4"}</button>
+            <button key={l} onClick={() => setLen(l)} className={cn("rounded-lg px-2 py-1", len === l && "bg-primary text-primary-foreground")}>{l === 1 ? "1/16" : l === 2 ? "1/8" : "1/4"}</button>
           ))}
         </div>
         <label className="flex items-center gap-1.5 text-sm font-bold"><input type="checkbox" checked={drums} onChange={(e) => setDrums(e.target.checked)} /> Drums</label>

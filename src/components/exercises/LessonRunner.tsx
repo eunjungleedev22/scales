@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay } from "lucide-react";
+import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen } from "lucide-react";
 import type { Lesson } from "@/content/curriculum";
 import { getWorld, nextLesson } from "@/content/curriculum";
 import { instantiate } from "@/lib/exercises/instantiate";
@@ -144,7 +144,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
             </div>
           </div>
           <IntroPlayer scenes={scenes} title={en(lesson.title)} />
-          <div className="rounded-3xl border-2 border-border bg-card p-5">
+          <div className="rounded-3xl border border-border bg-card p-5">
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{t("concept")}</p>
             <ul className="space-y-2">
               {lesson.concept.map((c, i) => (
@@ -177,11 +177,11 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
             </p>
           )}
           <a href={youtubeSearchUrl(ytQuery)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground">
-            <MonitorPlay className="size-4 text-[#ff4d6d]" /> More video lessons on YouTube: “{ytQuery}” ↗
+            <MonitorPlay className="size-4 text-[#ff4d3d]" /> More video lessons on YouTube: “{ytQuery}” ↗
           </a>
           <div className="flex flex-wrap gap-2">
             <Button size="lg" variant="lime" onClick={start} autoFocus>
-              {lesson.exercises.length} exercises <ArrowRight /> <Kbd className="bg-lime-foreground/10 text-lime-foreground">Enter</Kbd>
+              {lesson.exercises.length} exercises <ArrowRight /> <Kbd className="border-black/20 bg-black/15 text-current">Enter</Kbd>
             </Button>
             {!progress.lessons[lesson.id] && (
               <Button
@@ -221,7 +221,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
       {header}
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-4 text-center">
         <Cat mood={passed ? "party" : "think"} size={140} />
-        <h1 className="text-3xl font-black">{passed ? (lesson.boss ? t("bossDefeated") : t("lessonComplete")) : "Good effort — come back anytime!"}</h1>
+        <h1 className="display text-4xl sm:text-5xl">{passed ? (lesson.boss ? t("bossDefeated") : t("lessonComplete")) : "Good effort — come back anytime!"}</h1>
         <div className="grid w-full grid-cols-3 gap-2">
           <Stat label="Solved" value={`${solved}/${outcomes.length}`} />
           <Stat label={t("correctFirstTry")} value={`${firstTry}`} />
@@ -230,7 +230,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
         {bonus > 0 && <p className="text-sm font-bold text-lime">Includes +{bonus} completion bonus</p>}
         {!passed && <p className="text-sm text-muted-foreground">Solve at least 60% to mark the lesson complete. No penalty for trying again.</p>}
         {lesson.labTask && (
-          <div className="w-full rounded-2xl border-2 border-primary/50 bg-primary/10 p-4 text-left text-sm">
+          <div className="w-full rounded-2xl border border-primary/50 bg-primary/10 p-4 text-left text-sm">
             <p className="font-black text-primary">Try it in the Lab</p>
             <p className="mt-1">{L(lesson.labTask)}</p>
             <Button asChild size="sm" className="mt-3">
@@ -256,6 +256,11 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
           >
             <RotateCcw /> {t("retry")}
           </Button>
+          <Button size="lg" variant="secondary" asChild>
+            <Link href={`/reflect?lesson=${lesson.id}&auto=1`}>
+              <NotebookPen /> Reflect
+            </Link>
+          </Button>
           <Button size="lg" variant="ghost" asChild>
             <Link href="/learn">
               <Map /> {t("backToMap")}
@@ -269,7 +274,7 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
 
 function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="rounded-2xl border-2 border-border bg-card p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <p className={cn("text-2xl font-black", accent && "text-lime")}>{value}</p>
       <p className="text-xs font-bold uppercase text-muted-foreground">{label}</p>
     </div>

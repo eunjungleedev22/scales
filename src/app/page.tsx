@@ -1,133 +1,154 @@
 "use client";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Dumbbell, FlaskConical, Waves, Ear, Shapes, Trophy } from "lucide-react";
+import { ArrowRight, Dumbbell, FlaskConical, Waves, NotebookPen, ArrowUpRight } from "lucide-react";
 import { WORLDS } from "@/content/curriculum";
 import { useProgress } from "@/store/progress";
 import { useT } from "@/i18n/useT";
 import { nextRecommended, worldCompletion, worldMastery } from "@/lib/progress/selectors";
 import { levelFromXp, masteryLabel } from "@/lib/progress/xp";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Cat } from "@/components/mascot/Cat";
+import { loc } from "@/lib/exercises/types";
 
 export default function Dashboard() {
-  const { t, L } = useT();
+  const { t } = useT();
+  const en = (x: Parameters<typeof loc>[0]) => loc(x, "en");
   const { xp, lessons, stats, totalAnswered, achievements, placementDone } = useProgress();
   const next = nextRecommended(lessons);
   const currentWorld = WORLDS.find((w) => w.id === (next?.worldId ?? 7))!;
   const lvl = levelFromXp(xp);
   const fresh = totalAnswered === 0;
+  const worldPct = Math.round(worldCompletion(currentWorld, lessons) * 100);
 
   return (
-    <div className="flex flex-col gap-6">
-      <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary/40 via-card to-pink/20 p-6 sm:p-8">
-        <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-          <Cat mood={fresh ? "idle" : "happy"} size={120} />
+    <div className="flex flex-col gap-8">
+      {/* Hero */}
+      <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="panel relative overflow-hidden">
+        <div aria-hidden className="absolute inset-y-0 left-0 w-1.5 bg-primary" />
+        <div className="flex flex-col gap-6 p-6 pl-8 sm:flex-row sm:items-end sm:justify-between sm:p-8 sm:pl-10">
           <div className="flex-1">
-            <p className="text-sm font-bold uppercase tracking-widest text-lime">{fresh ? "Welcome, producer" : `${t("level")} ${lvl.level}`}</p>
-            <h1 className="mt-1 text-3xl font-black leading-tight sm:text-4xl">
-              {fresh ? "Learn theory by making sounds." : next ? L(next.title) : "Everything complete — go make a track!"}
-            </h1>
-            <p className="mt-1 text-muted-foreground">
-              {fresh ? "Short, punchy exercises. No streaks, no timers, no guilt. Take breaks whenever." : next ? `${L(currentWorld.title)} · ${L(currentWorld.tagline)}` : ""}
+            <p className="label">
+              {fresh ? "Welcome, producer" : `Up next · World ${String(currentWorld.id).padStart(2, "0")} · ${en(currentWorld.title)}`}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <h1 className="display mt-3 text-4xl sm:text-6xl">{fresh ? "Learn theory by ear." : next ? en(next.title) : "Go make a track."}</h1>
+            <p className="mt-3 max-w-lg text-muted-foreground">
+              {fresh ? "Short exercises you can hear. No streaks, no timers, no guilt — stop whenever." : next ? en(next.concept[0]) : "Every lesson is done. The Lab is waiting."}
+            </p>
+            <div className="mt-6 flex flex-wrap gap-2">
               {next && (
-                <Button asChild size="lg" variant="lime">
+                <Button asChild size="lg" className="w-full sm:w-auto">
                   <Link href={`/learn/${next.id}`}>
                     {fresh ? t("startLearning") : t("continue")} <ArrowRight />
                   </Link>
                 </Button>
               )}
               {fresh && !placementDone && (
-                <Button asChild size="lg" variant="secondary">
-                  <Link href="/practice?mode=placement">Already know some? {t("placementTest")}</Link>
+                <Button asChild size="lg" variant="secondary" className="w-full sm:w-auto">
+                  <Link href="/practice?mode=placement">{t("placementTest")}</Link>
                 </Button>
               )}
             </div>
           </div>
+          <div className="hidden shrink-0 sm:block">
+            <Cat mood={fresh ? "idle" : "happy"} size={150} />
+          </div>
+        </div>
+        {/* readout strip */}
+        <div className="grid grid-cols-3 divide-x divide-border border-t border-border bg-[#171512]">
+          {[
+            ["Level", String(lvl.level).padStart(2, "0")],
+            ["XP", String(xp).padStart(4, "0")],
+            ["Badges", `${Object.keys(achievements).length}`],
+          ].map(([k, v]) => (
+            <div key={k} className="px-5 py-3 sm:px-8">
+              <p className="label">{k}</p>
+              <p className="readout text-xl text-lime sm:text-2xl">{v}</p>
+            </div>
+          ))}
         </div>
       </motion.section>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <QuickCard href="/practice?mode=quick" icon={Dumbbell} title={t("quickPractice")} desc="5 mixed drills from what you've learned. ~3 minutes." color="#c6ff3d" />
-        <QuickCard href="/practice?mode=deep" icon={Waves} title={t("deepDive")} desc="Endless adaptive session for long, focused study blocks." color="#a855f7" />
-        <QuickCard href="/lab" icon={FlaskConical} title={t("openLab")} desc="Chords, bass, melody, drums — export MIDI to Ableton." color="#ff4fa3" />
-      </div>
+      {/* Modes */}
+      <section className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-4">
+        <ModeTile href="/practice?mode=quick" n="A" icon={Dumbbell} title={t("quickPractice")} desc="5 mixed drills · ~3 min" />
+        <ModeTile href="/practice?mode=deep" n="B" icon={Waves} title={t("deepDive")} desc="Endless, adaptive, pause anytime" />
+        <ModeTile href="/lab" n="C" icon={FlaskConical} title="Composition Lab" desc="Chords · bass · melody · MIDI" />
+        <ModeTile href="/reflect" n="D" icon={NotebookPen} title="Reflect" desc="Generate notes on what you practised" />
+      </section>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>{t("skillMastery")}</CardTitle>
-            <CardDescription>Mastery grows with first-try answers, not repetition.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {/* Worlds */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="section-title">
+              <span>01</span> {t("skillMastery")}
+            </h2>
+            <Link href="/learn" className="label hover:text-foreground">
+              Open map →
+            </Link>
+          </div>
+          <div className="panel divide-y divide-border">
             {WORLDS.map((w) => {
               const m = worldMastery(w, stats, lessons);
               const c = worldCompletion(w, lessons);
               return (
-                <Link key={w.id} href="/learn" className="rounded-2xl bg-secondary/60 p-3 transition-colors hover:bg-secondary">
-                  <div className="flex items-center justify-between text-sm font-bold">
-                    <span className="flex items-center gap-2">
-                      <span className="size-3 rounded-full" style={{ background: w.color }} />
-                      {L(w.title)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{masteryLabel(m).label}</span>
-                  </div>
-                  <Progress value={c * 100} className="mt-2 h-2" />
+                <Link key={w.id} href="/learn" className="grid grid-cols-[2.5rem_1fr] items-center gap-x-3 gap-y-1.5 px-4 py-3 transition-colors hover:bg-secondary/50 sm:grid-cols-[2.5rem_1fr_8rem_7rem]">
+                  <span className="readout text-sm" style={{ color: w.color }}>
+                    W{String(w.id).padStart(2, "0")}
+                  </span>
+                  <span className="truncate font-semibold">{en(w.title)}</span>
+                  <Progress value={c * 100} className="col-start-2 sm:col-start-auto" />
+                  <span className="label col-start-2 sm:col-start-auto sm:text-right">{masteryLabel(m).label}</span>
                 </Link>
               );
             })}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("currentWorld")}</CardTitle>
-            <CardDescription>{L(currentWorld.title)}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <div className="text-5xl font-black" style={{ color: currentWorld.color }}>
-              {Math.round(worldCompletion(currentWorld, lessons) * 100)}%
-            </div>
-            <div className="text-sm text-muted-foreground">
+          </div>
+        </div>
+        <div>
+          <h2 className="section-title mb-3">
+            <span>02</span> {t("currentWorld")}
+          </h2>
+          <div className="panel p-5">
+            <p className="label">World {String(currentWorld.id).padStart(2, "0")}</p>
+            <p className="mt-1 text-xl font-extrabold">{en(currentWorld.title)}</p>
+            <p className="readout mt-4 text-6xl" style={{ color: currentWorld.color }}>
+              {worldPct}
+              <span className="text-2xl text-muted-foreground">%</span>
+            </p>
+            <p className="label mt-1">
               {currentWorld.lessons.filter((l) => lessons[l.id]).length}/{currentWorld.lessons.length} lessons
+            </p>
+            <div className="mt-5 flex flex-col gap-1.5 text-sm">
+              <Link href="/ear-training" className="flex items-center justify-between border-t border-border pt-2 hover:text-primary">
+                {t("nav_ear")} <ArrowUpRight className="size-4" />
+              </Link>
+              <Link href="/playground" className="flex items-center justify-between border-t border-border pt-2 hover:text-primary">
+                {t("nav_playground")} <ArrowUpRight className="size-4" />
+              </Link>
+              <Link href="/progress" className="flex items-center justify-between border-t border-border pt-2 hover:text-primary">
+                {t("achievements")} <ArrowUpRight className="size-4" />
+              </Link>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/ear-training">
-                  <Ear /> {t("nav_ear")}
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/playground">
-                  <Shapes /> {t("nav_playground")}
-                </Link>
-              </Button>
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/progress">
-                  <Trophy /> {Object.keys(achievements).length} {t("achievements")}
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-function QuickCard({ href, icon: Icon, title, desc, color }: { href: string; icon: React.ComponentType<{ className?: string }>; title: string; desc: string; color: string }) {
+function ModeTile({ href, n, icon: Icon, title, desc }: { href: string; n: string; icon: React.ComponentType<{ className?: string }>; title: string; desc: string }) {
   return (
-    <motion.div whileHover={{ y: -4 }} whileTap={{ scale: 0.98 }}>
-      <Link href={href} className="flex h-full flex-col gap-2 rounded-3xl border-2 border-border bg-card p-5 transition-colors hover:border-[color:var(--c)]" style={{ ["--c" as string]: color }}>
-        <span className="flex size-11 items-center justify-center rounded-2xl" style={{ background: `${color}22`, color }}>
-          <Icon className="size-6" />
-        </span>
-        <span className="text-lg font-black">{title}</span>
-        <span className="text-sm text-muted-foreground">{desc}</span>
-      </Link>
-    </motion.div>
+    <Link href={href} className="group flex flex-col gap-3 bg-card p-5 transition-colors hover:bg-[#221f1b]">
+      <span className="flex items-center justify-between">
+        <span className="readout text-xs text-primary">{n}</span>
+        <Icon className="size-5 text-muted-foreground transition-colors group-hover:text-primary" />
+      </span>
+      <span className="text-lg font-extrabold uppercase leading-tight" style={{ fontStretch: "115%" }}>
+        {title}
+      </span>
+      <span className="text-sm text-muted-foreground">{desc}</span>
+    </Link>
   );
 }

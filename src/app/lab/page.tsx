@@ -122,7 +122,7 @@ export default function LabPage() {
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-black">{t("nav_lab")}</h1>
+          <h1 className="display text-4xl sm:text-5xl">{t("nav_lab")}</h1>
           <p className="text-muted-foreground">Your project autosaves. Space = play/stop.</p>
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
@@ -143,7 +143,7 @@ export default function LabPage() {
         <CardContent className="flex flex-wrap items-center gap-3 pt-5">
           <label className="flex items-center gap-2 text-sm font-bold">
             Tempo
-            <input type="range" min={90} max={150} value={p.bpm} onChange={(e) => update({ bpm: Number(e.target.value) })} className="accent-[#a855f7]" aria-label="Tempo" />
+            <input type="range" min={90} max={150} value={p.bpm} onChange={(e) => update({ bpm: Number(e.target.value) })} className="accent-[#ff5c1a]" aria-label="Tempo" />
             <span className="w-16 tabular-nums">{p.bpm} BPM</span>
           </label>
           <NativeSelect aria-label="Key" value={p.tonic} onChange={(e) => setKey(e.target.value, p.scale)}>
@@ -240,7 +240,7 @@ export default function LabPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <CardTitle>Bassline</CardTitle>
-              <CardDescription>Green rows = chord tones of the current bar.</CardDescription>
+              <CardDescription>Highlighted rows = chord tones of the current bar.</CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <LenPicker value={bassLen} onChange={setBassLen} />
@@ -325,7 +325,7 @@ function LenPicker({ value, onChange }: { value: number; onChange: (n: number) =
   return (
     <div className="flex items-center gap-1 rounded-xl bg-secondary p-1 text-xs font-bold" role="group" aria-label="Note length">
       {[1, 2, 4, 8].map((l) => (
-        <button key={l} onClick={() => onChange(l)} aria-pressed={value === l} className={cn("rounded-lg px-2 py-1", value === l && "bg-primary text-white")}>
+        <button key={l} onClick={() => onChange(l)} aria-pressed={value === l} className={cn("rounded-lg px-2 py-1", value === l && "bg-primary text-primary-foreground")}>
           {l === 1 ? "1/16" : l === 2 ? "1/8" : l === 4 ? "1/4" : "1/2"}
         </button>
       ))}

@@ -87,7 +87,7 @@ export default function EarTrainingPage() {
       </CardHeader>
       <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {modes.map((m) => (
-          <button key={m.id} onClick={() => setMode(m)} className="rounded-2xl border-2 border-border bg-secondary/50 p-4 text-left transition-colors hover:border-pink">
+          <button key={m.id} onClick={() => setMode(m)} className="rounded-2xl border border-border bg-secondary/50 p-4 text-left transition-colors hover:border-pink">
             <span className="block font-black">{m.title.split(": ")[1]}</span>
             <span className="text-xs text-muted-foreground">{m.desc}</span>
           </button>
@@ -101,7 +101,7 @@ export default function EarTrainingPage() {
       <div className="flex items-center gap-3">
         <Ear className="size-8 text-pink" />
         <div>
-          <h1 className="text-3xl font-black">{t("nav_ear")}</h1>
+          <h1 className="display text-4xl sm:text-5xl">{t("nav_ear")}</h1>
           <p className="text-muted-foreground">Unlimited replays. Space to replay, 1–9 to answer, / for a hint.</p>
         </div>
       </div>

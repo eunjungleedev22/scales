@@ -91,12 +91,12 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
   const startMidi = Math.min(lowest - (lowest % 12), Math.max(48, highest - 24 + ((12 - ((highest - 24) % 12)) % 12)));
 
   return (
-    <div className="overflow-hidden rounded-3xl border-2 border-border bg-[#0a0712]" aria-label={`Intro video: ${title}`} role="region">
+    <div className="overflow-hidden rounded-3xl border border-border bg-[#0f0e0c]" aria-label={`Intro video: ${title}`} role="region">
       {/* progress segments */}
       <div className="flex gap-1 p-3 pb-0">
         {scenes.map((s, i) => (
-          <button key={i} aria-label={`Scene ${i + 1}`} onClick={() => go(i - idx)} className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full rounded-full bg-lime transition-[width] duration-100" style={{ width: i < idx || done ? "100%" : i === idx ? `${Math.min(100, (elapsed / sceneMs(s)) * 100)}%` : "0%" }} />
+          <button key={i} aria-label={`Scene ${i + 1}`} onClick={() => go(i - idx)} className="h-1 flex-1 overflow-hidden rounded-[1px] bg-white/10">
+            <div className="h-full bg-primary transition-[width] duration-100" style={{ width: i < idx || done ? "100%" : i === idx ? `${Math.min(100, (elapsed / sceneMs(s)) * 100)}%` : "0%" }} />
           </button>
         ))}
       </div>
@@ -116,10 +116,10 @@ export function IntroPlayer({ scenes, title, onFinished }: { scenes: IntroScene[
 
         {!started && (
           <button onClick={start} className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 backdrop-blur-[2px]" aria-label="Play intro video">
-            <span className="flex size-16 items-center justify-center rounded-full bg-pink shadow-[0_0_40px_rgba(255,79,163,0.5)]">
-              <Play className="size-8 translate-x-0.5 fill-white text-white" />
+            <span className="flex size-16 items-center justify-center rounded-md bg-primary shadow-[0_4px_0_0_var(--primary-shadow)]">
+              <Play className="size-8 translate-x-0.5 fill-[#160f0a] text-[#160f0a]" />
             </span>
-            <span className="text-sm font-black">Watch the intro · ~{Math.round(scenes.reduce((s, x) => s + sceneMs(x), 0) / 1000)}s</span>
+            <span className="label text-foreground">Watch the intro · ~{Math.round(scenes.reduce((s, x) => s + sceneMs(x), 0) / 1000)}s</span>
           </button>
         )}
       </div>

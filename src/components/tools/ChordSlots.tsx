@@ -22,9 +22,9 @@ export function ChordSlots({ tonic, scale, chords, onChange, activeIndex }: Prop
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {chords.map((c, i) => {
         const r = resolveChord(tonic, scale, c);
-        const color = r.fn === "chromatic" ? "#ffb347" : FUNCTION_COLORS[r.fn];
+        const color = r.fn === "chromatic" ? "#e07a5f" : FUNCTION_COLORS[r.fn];
         return (
-          <div key={i} className={cn("flex flex-col gap-1.5 rounded-2xl border-2 border-border bg-card p-2.5 transition-all", activeIndex === i && "scale-[1.03] border-lime")}>
+          <div key={i} className={cn("flex flex-col gap-1.5 rounded-2xl border border-border bg-card p-2.5 transition-all", activeIndex === i && "scale-[1.03] border-lime")}>
             <div className="flex items-center justify-between text-[10px] font-bold uppercase text-muted-foreground">
               <span>Bar {i + 1}</span>
               <span style={{ color }}>{r.fn}</span>

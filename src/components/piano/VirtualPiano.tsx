@@ -34,9 +34,9 @@ export interface VirtualPianoProps {
 
 const MARK_STYLE: Record<KeyMark, { bg?: string; ring?: string }> = {
   selected: {},
-  right: { ring: "#c6ff3d" },
-  wrong: { ring: "#ff4d6d" },
-  missing: { ring: "#ffd23f" },
+  right: { ring: "#f5c542" },
+  wrong: { ring: "#ff4d3d" },
+  missing: { ring: "#f5c542" },
   scale: {},
   root: {},
   given: {},
@@ -126,10 +126,10 @@ export function VirtualPiano({
       ? { left: `${left}%`, width: `${whiteWidth * 0.62}%` }
       : { width: `${whiteWidth}%` };
     if (filled) style.background = mark === "given" ? `linear-gradient(to bottom, ${color}88, ${color}55)` : color;
-    else if (tinted) style.background = black ? `linear-gradient(to bottom, #1a1428, ${color}aa)` : `linear-gradient(to bottom, #ffffff, ${color}66)`;
+    else if (tinted) style.background = black ? `linear-gradient(to bottom, #171512, ${color}aa)` : `linear-gradient(to bottom, #ffffff, ${color}66)`;
     const ring = mark ? MARK_STYLE[mark].ring : undefined;
     if (ring) style.boxShadow = `inset 0 0 0 4px ${ring}`;
-    if (mark === "missing") style.boxShadow = `inset 0 0 0 4px #ffd23f`;
+    if (mark === "missing") style.boxShadow = `inset 0 0 0 4px #f5c542`;
     const keyHint = keyboardInput ? KEY_LABEL[m - startMidi - shift * 12] : undefined;
     return (
       <button
@@ -153,8 +153,8 @@ export function VirtualPiano({
         className={cn(
           "relative flex select-none flex-col items-center justify-end pb-1.5 font-bold transition-[transform,background] duration-75 focus-visible:z-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink",
           black
-            ? "absolute top-0 z-20 h-[60%] rounded-b-lg border border-black bg-[#151021] text-[9px] text-white/70 shadow-[0_3px_0_0_#000]"
-            : "h-full rounded-b-xl border border-[#2a2140] bg-[#f6f3ff] text-[11px] text-[#1a1428] shadow-[inset_0_-6px_0_0_#d8d0f0]",
+            ? "absolute top-0 z-20 h-[60%] rounded-b-lg border border-black bg-[#1d1b18] text-[9px] text-white/70 shadow-[0_3px_0_0_#000]"
+            : "h-full rounded-b-xl border border-[#3a362f] bg-[#efe8d8] text-[11px] text-[#171512] shadow-[inset_0_-6px_0_0_#cfc6b0]",
           isActive && "translate-y-[2px]",
           disabled && "cursor-default",
           !disabled && "cursor-pointer",
@@ -167,13 +167,13 @@ export function VirtualPiano({
           </span>
         )}
         {(mark === "right" || mark === "wrong") && (
-          <span aria-hidden className={cn("absolute left-1/2 top-[38%] -translate-x-1/2 rounded-full px-1 text-xs font-black", mark === "right" ? "bg-[#1a1428] text-lime" : "bg-[#1a1428] text-[#ff4d6d]")}>
+          <span aria-hidden className={cn("absolute left-1/2 top-[38%] -translate-x-1/2 rounded-full px-1 text-xs font-black", mark === "right" ? "bg-[#171512] text-lime" : "bg-[#171512] text-[#ff4d3d]")}>
             {mark === "right" ? "✓" : "✕"}
           </span>
         )}
-        {keyHint && <span className={cn("absolute top-1 hidden text-[9px] opacity-50 md:inline", black ? "text-white" : "text-[#1a1428]")}>{keyHint}</span>}
+        {keyHint && <span className={cn("absolute top-1 hidden text-[9px] opacity-50 md:inline", black ? "text-white" : "text-[#171512]")}>{keyHint}</span>}
         {names && (
-          <span className={cn("whitespace-pre text-center leading-tight", filled && !black && "text-[#1a1428]", filled && black && "text-[#1a1428]")}>{labelFor(m)}</span>
+          <span className={cn("whitespace-pre text-center leading-tight", filled && !black && "text-[#171512]", filled && black && "text-[#171512]")}>{labelFor(m)}</span>
         )}
       </button>
     );

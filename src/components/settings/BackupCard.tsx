@@ -95,7 +95,7 @@ export function BackupCard() {
           placeholder="…or paste a backup code here"
           aria-label="Backup code"
           rows={3}
-          className="w-full rounded-2xl border-2 border-border bg-secondary p-3 font-mono text-xs focus-visible:border-primary focus-visible:outline-none"
+          className="w-full rounded-2xl border border-border bg-secondary p-3 font-mono text-xs focus-visible:border-primary focus-visible:outline-none"
         />
         <div className="flex flex-wrap items-center gap-3">
           <Button size="sm" onClick={() => restore(code)} disabled={!code.trim()}>

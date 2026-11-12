@@ -1,7 +1,7 @@
 export const DICT = {
   en: {
     appName: "Harmonic Cat",
-    nav_dashboard: "Home", nav_learn: "Learn", nav_practice: "Practice", nav_ear: "Ear Training", nav_playground: "Playground", nav_lab: "Composition Lab", nav_progress: "Progress", nav_settings: "Settings",
+    nav_dashboard: "Home", nav_learn: "Learn", nav_practice: "Practice", nav_ear: "Ear Training", nav_playground: "Playground", nav_lab: "Composition Lab", nav_reflect: "Reflect", nav_progress: "Progress", nav_settings: "Settings",
     continue: "Continue learning", startLearning: "Start learning", currentWorld: "Current world", skillMastery: "Skill mastery", quickPractice: "Quick practice", deepDive: "Deep Dive Mode", openLab: "Open Composition Lab",
     check: "Check", clear: "Clear", hint: "Hint", replay: "Replay", play: "Play", stop: "Stop", next: "Next", retry: "Try again", skip: "Skip", finish: "Finish", listen: "Listen",
     why: "Why it works", inTheStudio: "In the studio", lessonComplete: "Lesson complete!", bossDefeated: "Boss defeated!", xpEarned: "XP earned", backToMap: "Back to map", nextLesson: "Next lesson",
@@ -14,7 +14,7 @@ export const DICT = {
   },
   ko: {
     appName: "하모닉 캣",
-    nav_dashboard: "홈", nav_learn: "학습", nav_practice: "연습", nav_ear: "청음 훈련", nav_playground: "이론 놀이터", nav_lab: "작곡 랩", nav_progress: "진행 상황", nav_settings: "설정",
+    nav_dashboard: "홈", nav_learn: "학습", nav_practice: "연습", nav_ear: "청음 훈련", nav_playground: "이론 놀이터", nav_lab: "작곡 랩", nav_reflect: "회고", nav_progress: "진행 상황", nav_settings: "설정",
     continue: "이어서 학습", startLearning: "학습 시작", currentWorld: "현재 월드", skillMastery: "스킬 숙련도", quickPractice: "빠른 연습", deepDive: "딥 다이브 모드", openLab: "작곡 랩 열기",
     check: "확인", clear: "지우기", hint: "힌트", replay: "다시 듣기", play: "재생", stop: "정지", next: "다음", retry: "다시 시도", skip: "건너뛰기", finish: "완료", listen: "듣기",
     why: "왜 그럴까요", inTheStudio: "스튜디오에서", lessonComplete: "레슨 완료!", bossDefeated: "보스 격파!", xpEarned: "획득 XP", backToMap: "지도로", nextLesson: "다음 레슨",

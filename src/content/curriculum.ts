@@ -68,7 +68,7 @@ const progCue = (chords: Array<[string, string]>, bpm = 110, withBass = true): A
 /* ====================================================================== */
 
 export const WORLDS: World[] = [
-  world(1, "notes-intervals", { en: "Notes & Intervals", ko: "음과 음정" }, { en: "Find your way around the keys", ko: "건반과 친해지기" }, "#c6ff3d", [
+  world(1, "notes-intervals", { en: "Notes & Intervals", ko: "음과 음정" }, { en: "Find your way around the keys", ko: "건반과 친해지기" }, "#f5c542", [
     {
       id: "w1-keyboard",
       title: { en: "Keyboard orientation", ko: "건반 익히기" },
@@ -185,7 +185,7 @@ export const WORLDS: World[] = [
     },
   ]),
 
-  world(2, "scales-keys", { en: "Scales & Keys", ko: "스케일과 조성" }, { en: "The note palettes behind every track", ko: "모든 트랙의 음 팔레트" }, "#b45cff", [
+  world(2, "scales-keys", { en: "Scales & Keys", ko: "스케일과 조성" }, { en: "The note palettes behind every track", ko: "모든 트랙의 음 팔레트" }, "#ff5c1a", [
     {
       id: "w2-major",
       title: { en: "Major scale", ko: "메이저 스케일" },
@@ -314,7 +314,7 @@ export const WORLDS: World[] = [
     },
   ]),
 
-  world(3, "chords", { en: "Chords", ko: "코드" }, { en: "Stack notes, build moods", ko: "음을 쌓아 분위기 만들기" }, "#ff4fa3", [
+  world(3, "chords", { en: "Chords", ko: "코드" }, { en: "Stack notes, build moods", ko: "음을 쌓아 분위기 만들기" }, "#46b7a5", [
     {
       id: "w3-triads",
       title: { en: "Major & minor triads", ko: "장3화음과 단3화음" },
@@ -413,7 +413,7 @@ export const WORLDS: World[] = [
     },
   ]),
 
-  world(4, "progressions", { en: "Harmonic Progressions", ko: "화성 진행" }, { en: "How chords move and why", ko: "코드는 어떻게, 왜 움직이나" }, "#36c5ff", [
+  world(4, "progressions", { en: "Harmonic Progressions", ko: "화성 진행" }, { en: "How chords move and why", ko: "코드는 어떻게, 왜 움직이나" }, "#8fa8c8", [
     {
       id: "w4-diatonic",
       title: { en: "Diatonic harmony", ko: "다이아토닉 화성" },
@@ -518,7 +518,7 @@ export const WORLDS: World[] = [
     },
   ]),
 
-  world(5, "melody-bass", { en: "Melody & Basslines", ko: "멜로디와 베이스라인" }, { en: "Lines that fit the harmony", ko: "화성에 맞는 라인" }, "#ffb347", [
+  world(5, "melody-bass", { en: "Melody & Basslines", ko: "멜로디와 베이스라인" }, { en: "Lines that fit the harmony", ko: "화성에 맞는 라인" }, "#e07a5f", [
     {
       id: "w5-chord-tones",
       title: { en: "Chord tones", ko: "코드 톤" },
@@ -590,7 +590,7 @@ export const WORLDS: World[] = [
     },
   ]),
 
-  world(6, "electronic", { en: "Electronic Music Application", ko: "전자음악 응용" }, { en: "Theory for the club", ko: "클럽을 위한 이론" }, "#2ee6c5", [
+  world(6, "electronic", { en: "Electronic Music Application", ko: "전자음악 응용" }, { en: "Theory for the club", ko: "클럽을 위한 이론" }, "#a3c45a", [
     {
       id: "w6-house",
       title: { en: "House chord progressions", ko: "하우스 코드 진행" },
@@ -666,7 +666,7 @@ export const WORLDS: World[] = [
     },
   ]),
 
-  world(7, "composition", { en: "Composition Lab", ko: "작곡 랩" }, { en: "Make your own track ideas", ko: "나만의 트랙 아이디어" }, "#ff7b54", [
+  world(7, "composition", { en: "Composition Lab", ko: "작곡 랩" }, { en: "Make your own track ideas", ko: "나만의 트랙 아이디어" }, "#ece4d2", [
     {
       id: "w7-progression",
       title: { en: "Build a 4-bar progression", ko: "4마디 진행 만들기" },

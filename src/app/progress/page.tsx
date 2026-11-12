@@ -19,7 +19,7 @@ export default function ProgressPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center gap-5 rounded-[2rem] bg-card p-6">
+      <div className="flex flex-wrap items-center gap-5 rounded-lg bg-card p-6">
         <Cat mood="happy" size={96} />
         <div className="flex-1">
           <p className="text-sm font-bold uppercase tracking-widest text-lime">
@@ -86,7 +86,7 @@ export default function ProgressPage() {
           {ACHIEVEMENTS.map((a) => {
             const got = achievements[a.id];
             return (
-              <div key={a.id} className={cn("flex items-center gap-3 rounded-2xl border-2 p-3", got ? "border-lime/60 bg-lime/5" : "border-border opacity-50 grayscale")}>
+              <div key={a.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", got ? "border-lime/60 bg-lime/5" : "border-border opacity-50 grayscale")}>
                 <span className="text-3xl">{a.emoji}</span>
                 <div>
                   <p className="font-black">{L(a.title)}</p>

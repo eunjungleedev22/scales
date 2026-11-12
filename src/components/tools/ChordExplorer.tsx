@@ -38,10 +38,10 @@ export function ChordExplorer() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex rounded-2xl bg-secondary p-1 text-sm font-bold">
-          <button className={cn("rounded-xl px-3 py-1.5", !detectMode && "bg-primary text-white")} onClick={() => setDetectMode(false)}>
+          <button className={cn("rounded-xl px-3 py-1.5", !detectMode && "bg-primary text-primary-foreground")} onClick={() => setDetectMode(false)}>
             Build
           </button>
-          <button className={cn("rounded-xl px-3 py-1.5", detectMode && "bg-primary text-white")} onClick={() => setDetectMode(true)}>
+          <button className={cn("rounded-xl px-3 py-1.5", detectMode && "bg-primary text-primary-foreground")} onClick={() => setDetectMode(true)}>
             What chord is this?
           </button>
         </div>

@@ -1,27 +1,30 @@
 "use client";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Check, Crown, FastForward, Star } from "lucide-react";
+import { Check, Crown, FastForward } from "lucide-react";
 import { WORLDS } from "@/content/curriculum";
 import { useProgress } from "@/store/progress";
 import { useT } from "@/i18n/useT";
 import { lessonMastery, nextRecommended, worldCompletion } from "@/lib/progress/selectors";
 import { masteryLabel } from "@/lib/progress/xp";
+import { loc } from "@/lib/exercises/types";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** The skill tree, drawn as a bank of sequencer pads per world. */
 export default function LearnPage() {
-  const { t, L } = useT();
+  const { t } = useT();
+  const en = (x: Parameters<typeof loc>[0]) => loc(x, "en");
   const { lessons, stats, placementDone } = useProgress();
   const next = nextRecommended(lessons);
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black">{t("nav_learn")}</h1>
-          <p className="text-muted-foreground">Every lesson is open. Follow the path or jump to what you need.</p>
+          <p className="label">7 worlds · {WORLDS.reduce((n, w) => n + w.lessons.length, 0)} lessons</p>
+          <h1 className="display mt-2 text-4xl sm:text-5xl">{t("nav_learn")}</h1>
+          <p className="mt-2 text-muted-foreground">Every pad is open. Follow the lit path or jump anywhere.</p>
         </div>
         {!placementDone && (
           <Button asChild variant="secondary">
@@ -35,60 +38,57 @@ export default function LearnPage() {
       {WORLDS.map((w) => {
         const pct = worldCompletion(w, lessons);
         return (
-          <section key={w.id} aria-labelledby={`world-${w.id}`} className="rounded-[2rem] border-2 border-border bg-card/60 p-5 sm:p-7">
-            <div className="mb-6 flex flex-wrap items-center gap-4">
-              <div className="flex size-14 items-center justify-center rounded-2xl text-2xl font-black text-background" style={{ background: w.color }}>
-                {w.id}
-              </div>
+          <section key={w.id} aria-labelledby={`world-${w.id}`} className="panel overflow-hidden">
+            <div className="flex flex-wrap items-center gap-4 border-b border-border bg-[#171512] px-5 py-4">
+              <span className="readout text-3xl" style={{ color: w.color }}>
+                {String(w.id).padStart(2, "0")}
+              </span>
               <div className="min-w-0 flex-1">
-                <h2 id={`world-${w.id}`} className="text-2xl font-black">
-                  {L(w.title)}
+                <h2 id={`world-${w.id}`} className="text-xl font-extrabold uppercase leading-tight" style={{ fontStretch: "118%" }}>
+                  {en(w.title)}
                 </h2>
-                <p className="text-sm text-muted-foreground">{L(w.tagline)}</p>
+                <p className="text-sm text-muted-foreground">{en(w.tagline)}</p>
               </div>
-              <div className="w-full sm:w-48">
-                <div className="mb-1 flex justify-between text-xs font-bold">
-                  <span>{Math.round(pct * 100)}% {t("worldComplete")}</span>
+              <div className="w-full sm:w-44">
+                <div className="mb-1.5 flex justify-between">
+                  <span className="label">Progress</span>
+                  <span className="readout text-xs">{Math.round(pct * 100)}%</span>
                 </div>
-                <Progress value={pct * 100} indicatorClassName="" style={{}} />
+                <Progress value={pct * 100} />
               </div>
             </div>
 
-            <ol className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
+            <ol className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 sm:gap-3 sm:p-5 lg:grid-cols-6">
               {w.lessons.map((l, i) => {
                 const rec = lessons[l.id];
-                const m = lessonMastery(l, stats, rec);
-                const paws = masteryLabel(m).paws;
+                const paws = masteryLabel(lessonMastery(l, stats, rec)).paws;
                 const isNext = next?.id === l.id;
                 return (
-                  <li key={l.id} className={cn("flex flex-col items-center text-center", i % 2 === 1 && "sm:translate-y-6")}>
-                    <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        href={`/learn/${l.id}`}
-                        aria-label={`${L(l.title)}${rec ? ` (${rec.testedOut ? t("testedOut") : t("done")})` : ""}`}
-                        className={cn(
-                          "relative flex size-20 items-center justify-center rounded-full border-4 text-2xl font-black shadow-[0_6px_0_0_rgba(0,0,0,0.4)] transition-colors",
-                          rec ? "border-transparent text-background" : "border-border bg-secondary text-foreground",
-                          isNext && "ring-4 ring-lime/60 ring-offset-4 ring-offset-card",
-                          l.boss && !rec && "border-pink",
-                        )}
-                        style={rec ? { background: w.color } : undefined}
-                      >
-                        {l.boss ? <Crown className="size-8" /> : rec ? <Check className="size-8" strokeWidth={4} /> : i + 1}
-                        {isNext && (
-                          <motion.span className="absolute -top-3 rounded-full bg-lime px-2 py-0.5 text-[10px] font-black uppercase text-lime-foreground" animate={{ y: [0, -3, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                            {t("recommended")}
-                          </motion.span>
-                        )}
-                      </Link>
-                    </motion.div>
-                    <p className="mt-3 text-sm font-bold leading-tight">{L(l.title)}</p>
-                    <div className="mt-1 flex gap-0.5" aria-label={`Mastery ${paws} of 5`}>
-                      {Array.from({ length: 5 }, (_, k) => (
-                        <Star key={k} className={cn("size-3", k < paws ? "fill-lime text-lime" : "text-border")} />
-                      ))}
-                    </div>
-                    {rec?.testedOut && <span className="text-[10px] text-muted-foreground">{t("testedOut")}</span>}
+                  <li key={l.id}>
+                    <Link
+                      href={`/learn/${l.id}`}
+                      aria-label={`${en(l.title)}${rec ? ` (${rec.testedOut ? t("testedOut") : t("done")})` : ""}${isNext ? " — next up" : ""}`}
+                      className={cn(
+                        "group relative flex aspect-square flex-col justify-between rounded-md border p-2 sm:p-2.5 transition-[transform,filter] active:translate-y-[2px]",
+                        rec ? "border-transparent text-[#18140a] shadow-[0_3px_0_0_#00000080]" : "border-border bg-[#14120f] shadow-[inset_0_2px_0_#00000060,0_3px_0_0_#0b0a09] hover:border-muted-foreground/40",
+                        isNext && "border-primary ring-1 ring-primary",
+                        l.boss && !rec && "border-dashed border-primary/70",
+                      )}
+                      style={rec ? { background: w.color, boxShadow: `0 0 18px -6px ${w.color}, 0 3px 0 0 #00000080` } : undefined}
+                    >
+                      <span className="flex items-start justify-between">
+                        <span className={cn("readout text-[11px]", rec ? "opacity-70" : "text-muted-foreground")}>{String(i + 1).padStart(2, "0")}</span>
+                        {isNext ? <span className="led led-orange blink" /> : rec ? <Check className="size-4" strokeWidth={3} /> : l.boss ? <Crown className="size-4 text-primary" /> : null}
+                      </span>
+                      <span className={cn("line-clamp-3 text-[11.5px] font-bold leading-tight sm:text-[13px]", !rec && "text-foreground")}>{en(l.title)}</span>
+                      <span className="flex gap-0.5" aria-label={`Mastery ${paws} of 5`}>
+                        {Array.from({ length: 5 }, (_, k) => (
+                          <span key={k} className={cn("h-1 flex-1 rounded-[1px]", k < paws ? (rec ? "bg-[#18140a]" : "bg-lime") : rec ? "bg-[#18140a]/20" : "bg-border")} />
+                        ))}
+                      </span>
+                    </Link>
+                    {isNext && <p className="label mt-1.5 text-primary">{t("recommended")}</p>}
+                    {rec?.testedOut && <p className="label mt-1.5">{t("testedOut")}</p>}
                   </li>
                 );
               })}

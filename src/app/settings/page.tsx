@@ -20,7 +20,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-3xl font-black">{t("nav_settings")}</h1>
+      <h1 className="display text-4xl sm:text-5xl">{t("nav_settings")}</h1>
       <Card>
         <CardHeader>
           <CardTitle>General</CardTitle>

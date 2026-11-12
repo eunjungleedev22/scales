@@ -119,11 +119,11 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
     <div className="flex flex-col gap-5">
       <div className="flex items-start gap-3">
         <Cat mood={mood} size={64} className="shrink-0" />
-        <div className="relative flex-1 rounded-3xl rounded-tl-md border-2 border-border bg-card px-4 py-3">
+        <div className="panel relative flex-1 border-l-2 border-l-primary px-4 py-3">
           <h2 className="text-lg font-black leading-snug sm:text-xl">
             <GlossaryText text={exercise.prompt} />
           </h2>
-          {boss && <span className="text-xs font-bold uppercase tracking-wider text-pink">Boss challenge · 2× XP</span>}
+          {boss && <span className="label text-primary">Boss challenge · 2× XP</span>}
         </div>
       </div>
 
@@ -148,7 +148,7 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
             initial={{ opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             className={cn(
-              "rounded-3xl border-2 p-4",
+              "rounded-3xl border p-4",
               evaluation.status === "correct" && "border-lime bg-lime/10",
               evaluation.status === "creative" && "border-primary bg-primary/10",
               evaluation.status === "incorrect" && "border-destructive/70 bg-destructive/10",
@@ -203,7 +203,7 @@ export function ExercisePlayer({ exercise, onDone, boss, nextLabel, noSkip }: Pr
         )}
         {solved && (
           <Button variant="lime" size="lg" onClick={next} autoFocus>
-            {nextLabel ?? t("next")} <ArrowRight /> <Kbd className="bg-lime-foreground/10 text-lime-foreground">Enter</Kbd>
+            {nextLabel ?? t("next")} <ArrowRight /> <Kbd className="border-black/20 bg-black/15 text-current">Enter</Kbd>
           </Button>
         )}
       </div>
@@ -350,7 +350,7 @@ function KeysBody({ exercise, onSubmit, evaluation, revealed }: BodyProps) {
       {!single && (
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => check(selected)} disabled={!selected.length || solved}>
-            {t("check")} <Kbd className="bg-white/20 text-white">Enter</Kbd>
+            {t("check")} <Kbd className="border-black/20 bg-black/15 text-current">Enter</Kbd>
           </Button>
           <Button variant="secondary" onClick={() => setSelected([])} disabled={!selected.length || solved}>
             <Trash2 /> {t("clear")}
@@ -417,7 +417,7 @@ function ChoiceBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps) {
       {ex.audio && (
         <div className="flex items-center gap-3">
           <Button variant="pink" size="lg" onClick={() => (playing ? audio.stop() : playCue(ex.audio!))} aria-label={t("replay")}>
-            {playing ? <Square /> : <Play />} {ex.ear ? t("replay") : t("listen")} <Kbd className="bg-white/20 text-white">Space</Kbd>
+            {playing ? <Square /> : <Play />} {ex.ear ? t("replay") : t("listen")} <Kbd className="border-black/20 bg-black/15 text-current">Space</Kbd>
           </Button>
           {ex.ear && <span className="text-sm text-muted-foreground">Replay as often as you like.</span>}
         </div>
@@ -434,7 +434,7 @@ function ChoiceBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps) {
               onClick={() => choose(i)}
               disabled={solved}
               className={cn(
-                "flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 text-left font-bold transition-colors hover:border-primary disabled:cursor-default",
+                "flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left font-bold transition-colors hover:border-primary disabled:cursor-default",
                 state === "right" && "border-lime bg-lime/15",
                 state === "wrong" && "border-destructive bg-destructive/15",
               )}
@@ -508,7 +508,7 @@ function ProgressionBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps)
             <div
               key={i}
               className={cn(
-                "flex h-24 flex-col items-center justify-center rounded-2xl border-2 bg-card transition-all",
+                "flex h-24 flex-col items-center justify-center rounded-2xl border bg-card transition-all",
                 missing ? "border-dashed border-pink" : "border-border",
                 playhead === i && "scale-105 border-lime",
               )}
@@ -527,7 +527,7 @@ function ProgressionBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps)
       </div>
       <div className="flex flex-wrap gap-2">
         <Button variant="pink" onClick={() => play(picked !== null ? ex.options[picked] : null)}>
-          <Play /> {t("play")} <Kbd className="bg-white/20 text-white">Space</Kbd>
+          <Play /> {t("play")} <Kbd className="border-black/20 bg-black/15 text-current">Space</Kbd>
         </Button>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -541,7 +541,7 @@ function ProgressionBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps)
               onClick={() => choose(i)}
               disabled={solved}
               className={cn(
-                "flex items-center gap-3 rounded-2xl border-2 border-border bg-card px-4 py-3 text-left font-bold hover:border-primary",
+                "flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-left font-bold hover:border-primary",
                 st === "correct" && "border-lime bg-lime/15",
                 st === "creative" && "border-primary bg-primary/15",
                 st === "incorrect" && "border-destructive bg-destructive/15",
@@ -616,7 +616,7 @@ function MelodyBody({ exercise, onSubmit, evaluation }: BodyProps) {
               )}
               <div
                 className={cn(
-                  "flex h-20 w-full flex-col items-center justify-center rounded-xl border-2 text-sm font-black",
+                  "flex h-20 w-full flex-col items-center justify-center rounded-xl border text-sm font-black",
                   isCT ? "border-lime/70 bg-lime/10 text-lime" : "border-border bg-card",
                   editable && "ring-2 ring-pink/60",
                   changed && "border-pink",
@@ -754,7 +754,7 @@ function SequencerBody({ exercise, onSubmit, evaluation }: BodyProps) {
         )}
         <div className="flex items-center gap-1 rounded-xl bg-secondary p-1 text-xs font-bold">
           {[1, 2, 4].map((l) => (
-            <button key={l} onClick={() => setLen(l)} className={cn("rounded-lg px-2 py-1", len === l && "bg-primary text-white")} aria-pressed={len === l}>
+            <button key={l} onClick={() => setLen(l)} className={cn("rounded-lg px-2 py-1", len === l && "bg-primary text-primary-foreground")} aria-pressed={len === l}>
               {l === 1 ? "1/16" : l === 2 ? "1/8" : "1/4"}
             </button>
           ))}
@@ -770,7 +770,7 @@ function SequencerBody({ exercise, onSubmit, evaluation }: BodyProps) {
           {t("check")}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">Green-tinted rows are chord tones of the chord above. Click a note again to delete it.</p>
+      <p className="text-xs text-muted-foreground">Highlighted rows are chord tones of the chord above. Click a note again to delete it.</p>
     </div>
   );
 }
