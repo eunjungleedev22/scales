@@ -17,7 +17,7 @@ export function cueToEvents(cue: AudioCue): { events: NoteEvent[]; bpm: number }
       return { events: evs, bpm: 110 };
     }
     case "progression": {
-      const voicings = voiceProgression(cue.chords, "smooth", 55);
+      const voicings = voiceProgression(cue.chords, "smooth", 60);
       const evs = chordEvents(voicings, 4, "keys");
       if (cue.withBass !== false) cue.chords.forEach((c, i) => evs.push({ midi: placeAbove(chordPitchClasses(c.root, c.type)[0], 36), start: i * 4, duration: 3.8, instrument: "bass", velocity: 0.8 }));
       return { events: evs, bpm: cue.bpm ?? 110 };

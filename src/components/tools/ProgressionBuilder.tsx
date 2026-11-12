@@ -24,7 +24,7 @@ export const VOICINGS: Array<{ id: VoicingMode; label: string }> = [
 
 export function buildProgressionEvents(opts: { tonic: string; scale: ScaleId; chords: ProgChord[]; voicing: VoicingMode; stabs: boolean; bass: boolean; drums: boolean }): NoteEvent[] {
   const res = resolveProgression(opts.tonic, opts.scale, opts.chords);
-  const voicings = voiceProgression(res, opts.voicing, 55);
+  const voicings = voiceProgression(res, opts.voicing, 60);
   const evs = chordEvents(voicings, 4, opts.stabs ? "keys" : "pad", 0, opts.stabs);
   if (opts.bass) res.forEach((c, i) => evs.push({ midi: placeAbove(chordPitchClasses(c.root, c.type)[0], 36), start: i * 4, duration: 3.5, instrument: "bass", velocity: 0.8 }));
   if (opts.drums) evs.push(...drumLoop(res.length, "house"));

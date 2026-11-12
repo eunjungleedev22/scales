@@ -30,7 +30,7 @@ export function ChordSlots({ tonic, scale, chords, onChange, activeIndex }: Prop
               <span style={{ color }}>{r.fn}</span>
             </div>
             <button
-              onClick={() => audio.playNotes(chordMidi(r.root, r.type, 0, 52), 1.2)}
+              onClick={() => audio.playNotes(chordMidi(r.root, r.type, 0, 60), 1.2)}
               className="rounded-xl py-1 text-center hover:bg-secondary"
               aria-label={`Play ${r.symbol}`}
             >

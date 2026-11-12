@@ -85,7 +85,7 @@ export function ScaleExplorer() {
             <p className="mb-2 text-sm font-bold">Chords in this scale (tap to hear)</p>
             <div className="grid grid-cols-4 gap-2 sm:grid-cols-7 md:grid-cols-4 lg:grid-cols-7">
               {chords.map((c) => (
-                <button key={c.degree} onClick={() => audio.playNotes(chordMidi(c.root, c.type, 0, 52), 1.4)} className="rounded-xl bg-background px-1 py-2 text-center hover:ring-2 hover:ring-primary">
+                <button key={c.degree} onClick={() => audio.playNotes(chordMidi(c.root, c.type, 0, 60), 1.4)} className="rounded-xl bg-background px-1 py-2 text-center hover:ring-2 hover:ring-primary">
                   <span className="block font-black">{c.roman}</span>
                   <span className="block text-[11px] text-muted-foreground">{c.symbol}</span>
                 </button>

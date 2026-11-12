@@ -20,7 +20,7 @@ function previewEvents(): NoteEvent[] {
     { root: "G", type: "dom7" as const },
     { root: "C", type: "maj7" as const },
   ];
-  const evs = chordEvents(voiceProgression(chords, "smooth", 55), 2, "keys");
+  const evs = chordEvents(voiceProgression(chords, "smooth", 60), 2, "keys");
   [38, 43, 36].forEach((m, i) => evs.push({ midi: m, start: i * 2, duration: 1.8, instrument: "bass" }));
   [74, 72, 71, 72, 76].forEach((m, i) => evs.push({ midi: m, start: 0.5 + i * 1.1, duration: 0.5, instrument: "lead", velocity: 0.7 }));
   return evs;

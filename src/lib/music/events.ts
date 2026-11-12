@@ -43,7 +43,7 @@ export interface ChordSlot {
 export type VoicingMode = "root" | "first" | "second" | "smooth" | "spread";
 
 /** Voice a list of chords into MIDI notes. */
-export function voiceProgression(chords: Array<{ root: string; type: ChordType }>, mode: VoicingMode = "smooth", floor = 55): number[][] {
+export function voiceProgression(chords: Array<{ root: string; type: ChordType }>, mode: VoicingMode = "smooth", floor = 60): number[][] {
   const out: number[][] = [];
   chords.forEach((c, i) => {
     if (mode === "root") out.push(chordMidi(c.root, c.type, 0, floor));

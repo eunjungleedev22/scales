@@ -233,6 +233,7 @@ class AudioEngine {
   private voiceSrc: AudioBufferSourceNode | null = null;
   private voiceBus: GainNode | null = null;
   private voiceVolume = 0.7;
+  voiceTrimDb = -3;
 
   /** Narration level, independent from the music (0..1). */
   setVoiceVolume(v: number) {
@@ -240,9 +241,9 @@ class AudioEngine {
     if (this.voiceBus) this.voiceBus.gain.value = this.voiceGainValue();
   }
   private voiceGainValue() {
-    // Recordings are normalised to -16 LUFS; a +1 dB trim sits them just under the music (measured)
+    // Recordings are normalised to -16 LUFS; the trim sits them level with the music on phone speakers (measured)
     const v = this.voiceVolume;
-    return v <= 0 ? 0 : Math.pow(10, 1 / 20) * Math.pow(v / 0.7, 1.6);
+    return v <= 0 ? 0 : Math.pow(10, this.voiceTrimDb / 20) * Math.pow(v / 0.7, 1.6);
   }
   private voiceDone: ((r: "ended" | "cancelled") => void) | null = null;
 
@@ -335,7 +336,12 @@ class AudioEngine {
   private buses: { comp?: any; reverb?: any; chorus?: any } = {};
   private makeupNode: any = null;
   /** Music make-up gain before the limiter (dB). */
-  musicMakeupDb = 6;
+  musicMakeupDb = 8;
+  eqPresenceHz = 1800;
+  eqPresenceDb = 6;
+  eqLowDb = -6;
+  eqNodes: { presence?: any; lowCut?: any; exciterGain?: any } = {};
+  exciterDb = -12;
   private tonal: any[] = [];
   preset: TonePreset = "epiano";
 
@@ -349,9 +355,21 @@ class AudioEngine {
     const limiter = new Tone.Compressor({ threshold: -3, ratio: 20, knee: 0, attack: 0.001, release: 0.08 }).connect(softClip);
     const makeup = new Tone.Gain(Tone.dbToGain(this.musicMakeupDb)).connect(limiter);
     this.makeupNode = makeup;
+    // "Small speaker" EQ: phones can't reproduce deep lows and are loudest around 1–4 kHz.
+    // Trim the lows (frees headroom) and lift the presence range so music carries like the voice does.
+    const presence = new Tone.Filter({ type: "highshelf", frequency: this.eqPresenceHz, gain: this.eqPresenceDb }).connect(makeup);
+    const lowCut = new Tone.Filter({ type: "lowshelf", frequency: 180, gain: this.eqLowDb }).connect(presence);
+    // Harmonic exciter (parallel): saturate the low-mids and keep only the generated overtones,
+    // so bass and low chords are heard on phone speakers that can't play their fundamentals.
+    const exciterIn = new Tone.Filter({ type: "lowpass", frequency: 1200 });
+    const shaper = new Tone.WaveShaper((x) => Math.tanh(4 * x), 2048);
+    const exciterHp = new Tone.Filter({ type: "highpass", frequency: 900, rolloff: -24 });
+    const exciterGain = new Tone.Gain(Tone.dbToGain(this.exciterDb));
+    exciterIn.chain(shaper, exciterHp, exciterGain, presence);
+    this.eqNodes = { presence, lowCut, exciterGain };
     // Mix compressor with a narrow knee (Tone's default 30 dB knee barely compresses): evens out
     // single notes vs dense chords so the limiter stays almost idle (tuned by measurement)
-    const comp = new Tone.Compressor({ threshold: -34, ratio: 6, knee: 6, attack: 0.005, release: 0.15 }).connect(makeup);
+    const comp = new Tone.Compressor({ threshold: -34, ratio: 6, knee: 6, attack: 0.005, release: 0.15 }).fan(lowCut, exciterIn);
     const reverb = new Tone.Freeverb({ roomSize: 0.62, dampening: 2800, wet: 0.2 }).connect(comp);
     const chorus = new Tone.Chorus({ frequency: 0.8, delayTime: 3.5, depth: 0.6, wet: 0.5 }).connect(reverb).start();
     this.buses = { comp, reverb, chorus };
@@ -391,7 +409,7 @@ class AudioEngine {
       this.inst.keys = keep(
         new Tone.PolySynth(Tone.FMSynth, {
           harmonicity: 1,
-          modulationIndex: 6,
+          modulationIndex: 9,
           oscillator: { type: "sine" },
           modulation: { type: "sine" },
           envelope: { attack: 0.002, decay: 1.6, sustain: 0.25, release: 1.1 },
@@ -434,7 +452,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "fatsawtooth", count: 2, spread: 10 },
           envelope: { attack: 0.01, decay: 0.6, sustain: 0.5, release: 0.8 },
-          volume: -4,
+          volume: -7,
         }).connect(keysFilter),
       );
       const padFilter = keep(new Tone.Filter({ frequency: 1500, type: "lowpass", rolloff: -24 }).connect(chorus));
@@ -442,7 +460,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "fatsawtooth", count: 3, spread: 18 },
           envelope: { attack: 0.35, decay: 0.5, sustain: 0.8, release: 1.5 },
-          volume: -13,
+          volume: -16,
         }).connect(padFilter),
       );
       this.inst.bass = keep(
@@ -451,7 +469,7 @@ class AudioEngine {
           filter: { Q: 1, type: "lowpass", rolloff: -24 },
           envelope: { attack: 0.005, decay: 0.25, sustain: 0.6, release: 0.12 },
           filterEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.4, release: 0.2, baseFrequency: 180, octaves: 2 },
-          volume: -9.5,
+          volume: -11.5,
         }).connect(comp),
       );
       const leadFilter = keep(new Tone.Filter(2600, "lowpass").connect(chorus));
@@ -459,7 +477,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "pulse", width: 0.35 } as any,
           envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.4 },
-          volume: -13,
+          volume: -16,
         }).connect(leadFilter),
       );
     } else if (preset === "piano") {
@@ -470,14 +488,14 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "custom", partials } as any,
           envelope: { attack: 0.002, decay: 2.2, sustain: 0.0, release: 1.2 },
-          volume: -9,
+          volume: -11,
         }).connect(tone),
       );
       this.inst.pad = keep(
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "custom", partials: [1, 0.3, 0.15, 0.05] } as any,
           envelope: { attack: 0.06, decay: 3, sustain: 0.25, release: 1.6 },
-          volume: -16,
+          volume: -18,
         }).connect(tone),
       );
       this.inst.bass = keep(
@@ -486,14 +504,14 @@ class AudioEngine {
           filter: { Q: 0.5, type: "lowpass" },
           envelope: { attack: 0.004, decay: 0.8, sustain: 0.35, release: 0.3 },
           filterEnvelope: { attack: 0.004, decay: 0.4, sustain: 0.5, release: 0.3, baseFrequency: 300, octaves: 1.5 },
-          volume: -6,
+          volume: -7,
         }).connect(comp),
       );
       this.inst.lead = keep(
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "custom", partials: [1, 0.35, 0.18, 0.08] } as any,
           envelope: { attack: 0.002, decay: 1.2, sustain: 0.1, release: 0.8 },
-          volume: -10,
+          volume: -12,
         }).connect(tone),
       );
     } else {
@@ -503,7 +521,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "fatsawtooth", count: 2, spread: 14 },
           envelope: { attack: 0.005, decay: 0.35, sustain: 0.35, release: 0.7 },
-          volume: -2,
+          volume: -5,
         }).connect(keysFilter),
       );
       const padFilter = keep(new Tone.Filter(2400, "lowpass").connect(reverb));
@@ -511,7 +529,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "fattriangle", count: 3, spread: 20 },
           envelope: { attack: 0.25, decay: 0.4, sustain: 0.7, release: 1.2 },
-          volume: -13,
+          volume: -16,
         }).connect(padFilter),
       );
       this.inst.bass = keep(
@@ -520,7 +538,7 @@ class AudioEngine {
           filter: { Q: 5, type: "lowpass", rolloff: -24 },
           envelope: { attack: 0.004, decay: 0.2, sustain: 0.5, release: 0.08 },
           filterEnvelope: { attack: 0.002, decay: 0.18, sustain: 0.25, release: 0.2, baseFrequency: 140, octaves: 3.2 },
-          volume: -12,
+          volume: -14,
         }).connect(comp),
       );
       const leadFilter = keep(new Tone.Filter(3200, "lowpass").connect(reverb));
@@ -528,11 +546,17 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "square" },
           envelope: { attack: 0.005, decay: 0.15, sustain: 0.3, release: 0.25 },
-          volume: -9,
+          volume: -12,
         }).connect(leadFilter),
       );
     }
     for (const k of ["keys", "pad", "lead"] as const) if (this.inst[k]) this.inst[k].maxPolyphony = 32;
+    // Presence lift / exciter per preset: the mellow FM e-piano needs the most help on phone speakers,
+    // bright saw-based sounds need little (they'd only push the limiter)
+    const eq: Record<TonePreset, [number, number]> = { epiano: [6, -12], piano: [3, -16], analog: [1, -24], acid: [0, -30] };
+    const [pres, exc] = eq[preset];
+    if (this.eqNodes.presence) this.eqNodes.presence.gain.value = pres;
+    if (this.eqNodes.exciterGain) this.eqNodes.exciterGain.gain.value = Tone.dbToGain(exc);
   }
 
   /** Switch the instrument sound (keys, pads, bass, lead). Drums stay the same. */
@@ -548,7 +572,7 @@ class AudioEngine {
   setVolume(v: number) {
     // v: 0..1
     // perceptual curve: 1.0 = 0 dB, 0.8 = ~-4 dB, 0.5 = ~-12 dB
-    this.volumeDb = v <= 0 ? -Infinity : 20 * Math.log10(Math.pow(v, 1.6));
+    this.volumeDb = v <= 0 ? -Infinity : 20 * Math.log10(Math.pow(v, 1.6)) + 1.5;
     if (this.Tone) this.Tone.getDestination().volume.value = this.volumeDb;
   }
 

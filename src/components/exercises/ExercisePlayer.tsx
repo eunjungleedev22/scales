@@ -464,7 +464,7 @@ function ProgressionBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps)
   const play = (fill: number | null) => {
     const seq = ex.degrees.map((d, i) => (i === ex.missing ? (fill === null ? null : chords[fill - 1]) : chords[d - 1]));
     const present = seq.map((c) => (c ? { root: c.root, type: c.type } : { root: ex.tonic, type: "maj" as const }));
-    const voicings = voiceProgression(present, "smooth", 55);
+    const voicings = voiceProgression(present, "smooth", 60);
     const events: NoteEvent[] = [];
     seq.forEach((c, i) => {
       if (!c) return;
@@ -696,7 +696,7 @@ function SequencerBody({ exercise, onSubmit, evaluation }: BodyProps) {
     let bars = 1;
     if (ex.kind === "bassline") {
       events.push(...stepsToEvents(notes, "bass"));
-      const voicings = voiceProgression(ex.chords, "smooth", 57);
+      const voicings = voiceProgression(ex.chords, "smooth", 60);
       events.push(...chordEvents(voicings, 4 / ex.chords.length, "keys", 0, true));
       events.push(...drumLoop(1, "house"));
     } else {

@@ -63,7 +63,7 @@ export function instantiate(def: ExerciseDef, rng: Rng = Math.random): ConcreteE
       production: def.production,
       options: def.pool.map((t) => CHORD_TYPES[t].name),
       answer: def.pool.indexOf(type),
-      audio: { type: "notes", midis: chordMidi(root, type, 0, 52), mode: "both" },
+      audio: { type: "notes", midis: chordMidi(root, type, 0, 57), mode: "both" },
     };
   }
   return def;

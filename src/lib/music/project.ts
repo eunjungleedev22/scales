@@ -23,7 +23,7 @@ import { resolveProgression } from "./progression";
 export function projectEvents(p: LabProjectLike, opts: { includeDrums?: boolean } = {}): NoteEvent[] {
   const chords = resolveProgression(p.tonic, p.scale, p.chords);
   const evs: NoteEvent[] = [];
-  if (!p.mute.chords) evs.push(...chordEvents(voiceProgression(chords, p.voicing, 55), 4, p.stabs ? "keys" : "pad", 0, p.stabs));
+  if (!p.mute.chords) evs.push(...chordEvents(voiceProgression(chords, p.voicing, 60), 4, p.stabs ? "keys" : "pad", 0, p.stabs));
   if (!p.mute.bass) evs.push(...stepsToEvents(p.bass, "bass"));
   if (!p.mute.melody) evs.push(...stepsToEvents(p.melody, "lead", 0, 0.8));
   if (opts.includeDrums !== false) {
