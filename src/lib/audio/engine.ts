@@ -20,30 +20,33 @@ interface PlayOptions {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/** A tiny silent WAV (used to switch iOS into "playback" mode so the ringer switch doesn't mute sound). */
-const SILENT_WAV = (() => {
-  const samples = 800;
-  const bytes = new Uint8Array(44 + samples);
+/** Build a 16-bit mono WAV data URI: silence (freq = 0) or a sine tone. Used for iOS unlocking and the media sound test. */
+export function wavDataUri(seconds: number, freq = 0, sampleRate = 22050): string {
+  const n = Math.max(1, Math.round(seconds * sampleRate));
+  const bytes = new Uint8Array(44 + n * 2);
   const view = new DataView(bytes.buffer);
   const w = (o: number, t: string) => [...t].forEach((c, i) => view.setUint8(o + i, c.charCodeAt(0)));
   w(0, "RIFF");
-  view.setUint32(4, 36 + samples, true);
+  view.setUint32(4, 36 + n * 2, true);
   w(8, "WAVE");
   w(12, "fmt ");
   view.setUint32(16, 16, true);
   view.setUint16(20, 1, true); // PCM
   view.setUint16(22, 1, true); // mono
-  view.setUint32(24, 8000, true);
-  view.setUint32(28, 8000, true);
-  view.setUint16(32, 1, true);
-  view.setUint16(34, 8, true); // 8-bit
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
   w(36, "data");
-  view.setUint32(40, samples, true);
-  bytes.fill(128, 44); // 8-bit silence
+  view.setUint32(40, n * 2, true);
+  for (let i = 0; i < n && freq > 0; i++) {
+    const env = Math.min(1, i / 200, (n - i) / 400);
+    view.setInt16(44 + i * 2, Math.round(Math.sin((2 * Math.PI * freq * i) / sampleRate) * 9000 * env), true);
+  }
   let bin = "";
-  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return `data:audio/wav;base64,${typeof btoa === "function" ? btoa(bin) : ""}`;
-})();
+}
 
 class AudioEngine {
   private Tone: ToneNS | null = null;
@@ -54,7 +57,7 @@ class AudioEngine {
   status: AudioStatus = "idle";
   error: string | null = null;
   playing = false;
-  private volumeDb = -8;
+  private volumeDb = -4;
 
   subscribe = (fn: () => void) => {
     this.listeners.add(fn);
@@ -65,33 +68,68 @@ class AudioEngine {
   }
   getSnapshot = () => `${this.status}|${this.playing}`;
 
+  /** Native AudioContext created inside the first user gesture (the most reliable way on iOS). */
+  private nativeCtx: AudioContext | null = null;
+  private bound = false;
+  private silentEl: HTMLAudioElement | null = null;
+  lastError: string | null = null;
+
   /** Start downloading Tone.js early (no sound yet), so a later tap can start audio instantly. */
   preload(): Promise<ToneNS> {
     if (!this.loadPromise) {
       this.loadPromise = import("tone").then((Tone) => {
         this.Tone = Tone;
-        const raw = Tone.getContext().rawContext as unknown as BaseAudioContext;
-        raw.addEventListener?.("statechange", () => this.syncStatus());
+        this.attach();
         return Tone;
       });
     }
     return this.loadPromise;
   }
 
-  private contextState(): string {
-    return this.Tone ? (this.Tone.getContext().rawContext as unknown as BaseAudioContext).state : "suspended";
+  /** Hand our gesture-created context to Tone, then build instruments on it. */
+  private attach() {
+    if (!this.Tone || !this.nativeCtx || this.bound) return;
+    try {
+      this.Tone.setContext(this.nativeCtx, true);
+      this.bound = true;
+      this.inst = {};
+      this.build(this.Tone);
+      this.syncStatus();
+    } catch (e) {
+      this.lastError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  /** Low-level context state: "running" | "suspended" | "interrupted" | "closed" | "none". */
+  contextState(): string {
+    return this.nativeCtx ? this.nativeCtx.state : "none";
+  }
+
+  get sampleRate(): number | null {
+    return this.nativeCtx?.sampleRate ?? null;
+  }
+
+  /** For diagnostics/tests only. */
+  get toneNamespace(): ToneNS | null {
+    return this.Tone;
+  }
+
+  get toneLoaded() {
+    return Boolean(this.Tone);
+  }
+
+  get contextBound() {
+    return this.bound;
   }
 
   private syncStatus() {
-    const running = this.contextState() === "running";
-    const next: AudioStatus = running ? "ready" : this.status === "error" ? "error" : "idle";
+    const running = this.contextState() === "running" && this.bound;
+    const next: AudioStatus = running ? "ready" : this.status === "error" ? "error" : this.status === "loading" ? "loading" : "idle";
     if (next !== this.status) {
       this.status = next;
       this.emit();
     }
   }
-
-  private silentEl: HTMLAudioElement | null = null;
 
   /**
    * Call synchronously from a user gesture (tap/click/key). Mobile browsers — iOS Safari in particular —
@@ -99,49 +137,60 @@ class AudioEngine {
    */
   unlockFromGesture() {
     if (typeof window === "undefined") return;
-    // iOS: play through the "playback" audio session so the silent switch doesn't mute Web Audio
+    // iOS 17+: use the "playback" audio session so the ring/silent switch doesn't mute Web Audio
     try {
       const nav = navigator as Navigator & { audioSession?: { type: string } };
-      if (nav.audioSession) nav.audioSession.type = "playback";
+      if (nav.audioSession && nav.audioSession.type !== "playback") nav.audioSession.type = "playback";
     } catch {
       /* not supported */
     }
-    if (!this.silentEl) {
+    // 1) Create the AudioContext inside the gesture (contexts created here start unlocked on iOS)
+    if (!this.nativeCtx || this.nativeCtx.state === "closed") {
+      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AC) {
+        this.status = "error";
+        this.error = "This browser has no Web Audio support.";
+        this.emit();
+        return;
+      }
       try {
-        this.silentEl = new Audio(SILENT_WAV);
-        this.silentEl.loop = true;
-        this.silentEl.setAttribute("playsinline", "");
-        this.silentEl.volume = 0.01;
-        void this.silentEl.play().catch(() => {
-          this.silentEl = null; // retry on the next gesture
-        });
+        this.nativeCtx = new AC({ latencyHint: "interactive" });
+      } catch {
+        this.nativeCtx = new AC();
+      }
+      this.nativeCtx.addEventListener?.("statechange", () => this.syncStatus());
+      this.bound = false;
+    }
+    const ctx = this.nativeCtx;
+    // 2) Resume + play a one-sample silent buffer inside the gesture (classic iOS unlock)
+    try {
+      if (ctx.state !== "running") void ctx.resume().then(() => this.syncStatus(), () => undefined);
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch (e) {
+      this.lastError = e instanceof Error ? e.message : String(e);
+    }
+    // 3) Older iOS: a looping silent <audio> element also moves the session out of "ambient" (silent switch)
+    if (!this.silentEl && !("audioSession" in navigator)) {
+      try {
+        const el = new Audio(wavDataUri(0.5));
+        el.loop = true;
+        el.setAttribute("playsinline", "");
+        el.setAttribute("x-webkit-airplay", "deny");
+        this.silentEl = el;
+        void el.play().catch(() => (this.silentEl = null));
       } catch {
         this.silentEl = null;
       }
     }
-    if (!this.Tone) {
-      void this.preload();
-      return;
-    }
-    if (this.contextState() === "running") {
-      if (!this.inst.keys) this.build(this.Tone);
-      this.syncStatus();
-      return;
-    }
-    const raw = this.Tone.getContext().rawContext as unknown as AudioContext;
-    try {
-      void raw.resume();
-      // Classic iOS unlock: play a one-sample silent buffer inside the gesture
-      const buf = raw.createBuffer(1, 1, 22050);
-      const src = raw.createBufferSource();
-      src.buffer = buf;
-      src.connect(raw.destination);
-      src.start(0);
-    } catch {
-      /* ignore */
-    }
-    if (!this.inst.keys) this.build(this.Tone);
-    setTimeout(() => this.syncStatus(), 50);
+    // 4) Bind to Tone (now, or as soon as it has loaded)
+    if (this.Tone) this.attach();
+    else void this.preload();
+    setTimeout(() => this.syncStatus(), 60);
+    setTimeout(() => this.syncStatus(), 500);
   }
 
   /** Make sure audio is loaded and running. Never hangs: resolves false if the browser still blocks sound. */
@@ -153,14 +202,18 @@ class AudioEngine {
           this.emit();
         }
         await this.preload();
+        if (this.status === "loading") this.status = "idle";
       }
-      const Tone = this.Tone!;
-      if (this.contextState() !== "running") {
-        await Promise.race([Tone.start(), new Promise((r) => setTimeout(r, 400))]);
+      if (!this.nativeCtx || !this.bound) {
+        // No gesture yet: we can't create sound until the user taps.
+        this.syncStatus();
+        return false;
       }
-      if (!this.inst.keys) this.build(Tone);
+      if (this.nativeCtx.state !== "running") {
+        await Promise.race([this.nativeCtx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 300))]);
+      }
       this.syncStatus();
-      return this.contextState() === "running";
+      return this.nativeCtx.state === "running";
     } catch (e) {
       this.status = "error";
       this.error = e instanceof Error ? e.message : String(e);
@@ -169,28 +222,48 @@ class AudioEngine {
     }
   }
 
+  /** Diagnostic: a plain Web Audio beep that bypasses Tone.js entirely. */
+  beepRaw(): boolean {
+    this.unlockFromGesture();
+    const ctx = this.nativeCtx;
+    if (!ctx) return false;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = 660;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.55);
+    return true;
+  }
+
   get ready() {
-    return this.status === "ready" && this.Tone?.getContext().state === "running";
+    return this.status === "ready" && this.contextState() === "running";
   }
 
   private build(Tone: ToneNS) {
     Tone.getDestination().volume.value = this.volumeDb;
-    const comp = new Tone.Compressor(-18, 3).toDestination();
+    // Master chain: glue compressor -> make-up gain -> brickwall limiter (loud enough for phone speakers, never clips)
+    const limiter = new Tone.Limiter(-1).toDestination();
+    const makeup = new Tone.Gain(Tone.dbToGain(9)).connect(limiter);
+    const comp = new Tone.Compressor({ threshold: -20, ratio: 3, attack: 0.005, release: 0.15 }).connect(makeup);
     const reverb = new Tone.Freeverb({ roomSize: 0.6, dampening: 3000, wet: 0.18 }).connect(comp);
 
-    const keysFilter = new Tone.Filter(2600, "lowpass").connect(reverb);
+    const keysFilter = new Tone.Filter(4200, "lowpass").connect(reverb);
     this.inst.keys = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "fatsawtooth", count: 2, spread: 14 },
       envelope: { attack: 0.005, decay: 0.35, sustain: 0.35, release: 0.7 },
-      volume: -14,
+      volume: -6,
     }).connect(keysFilter);
     this.inst.keys.maxPolyphony = 32;
 
-    const padFilter = new Tone.Filter(1600, "lowpass").connect(reverb);
+    const padFilter = new Tone.Filter(2400, "lowpass").connect(reverb);
     this.inst.pad = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "fattriangle", count: 3, spread: 20 },
       envelope: { attack: 0.25, decay: 0.4, sustain: 0.7, release: 1.2 },
-      volume: -12,
+      volume: -6,
     }).connect(padFilter);
 
     this.inst.bass = new Tone.MonoSynth({
@@ -198,27 +271,28 @@ class AudioEngine {
       filter: { Q: 5, type: "lowpass", rolloff: -24 },
       envelope: { attack: 0.004, decay: 0.2, sustain: 0.5, release: 0.08 },
       filterEnvelope: { attack: 0.002, decay: 0.18, sustain: 0.25, release: 0.2, baseFrequency: 140, octaves: 3.2 },
-      volume: -9,
+      volume: -3,
     }).connect(comp);
 
     const leadFilter = new Tone.Filter(3200, "lowpass").connect(reverb);
     this.inst.lead = new Tone.PolySynth(Tone.Synth, {
       oscillator: { type: "square" },
       envelope: { attack: 0.005, decay: 0.15, sustain: 0.3, release: 0.25 },
-      volume: -18,
+      volume: -10,
     }).connect(leadFilter);
 
-    this.inst.kick = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 6, envelope: { attack: 0.001, decay: 0.35, sustain: 0 }, volume: -4 }).connect(comp);
+    this.inst.kick = new Tone.MembraneSynth({ pitchDecay: 0.04, octaves: 6, envelope: { attack: 0.001, decay: 0.35, sustain: 0 }, volume: 0 }).connect(comp);
     const hatFilter = new Tone.Filter(8000, "highpass").connect(comp);
-    this.inst.hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0 }, volume: -20 }).connect(hatFilter);
+    this.inst.hat = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0 }, volume: -14 }).connect(hatFilter);
     const clapFilter = new Tone.Filter(1500, "bandpass").connect(reverb);
-    this.inst.clap = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.002, decay: 0.16, sustain: 0 }, volume: -10 }).connect(clapFilter);
-    this.inst.click = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.01 }, volume: -12 }).connect(comp);
+    this.inst.clap = new Tone.NoiseSynth({ noise: { type: "pink" }, envelope: { attack: 0.002, decay: 0.16, sustain: 0 }, volume: -4 }).connect(clapFilter);
+    this.inst.click = new Tone.Synth({ oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.01 }, volume: -6 }).connect(comp);
   }
 
   setVolume(v: number) {
     // v: 0..1
-    this.volumeDb = v <= 0 ? -Infinity : -40 + 40 * v;
+    // perceptual curve: 1.0 = 0 dB, 0.8 = ~-4 dB, 0.5 = ~-12 dB
+    this.volumeDb = v <= 0 ? -Infinity : 20 * Math.log10(Math.pow(v, 1.6));
     if (this.Tone) this.Tone.getDestination().volume.value = this.volumeDb;
   }
 

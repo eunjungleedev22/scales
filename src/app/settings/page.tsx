@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/select";
 import { Kbd } from "@/components/ui/kbd";
 import { BackupCard } from "@/components/settings/BackupCard";
+import { SoundCheck } from "@/components/settings/SoundCheck";
 
 export default function SettingsPage() {
   const s = useSettings();
@@ -92,6 +93,8 @@ export default function SettingsPage() {
           ))}
         </CardContent>
       </Card>
+
+      <SoundCheck />
 
       <BackupCard />
 

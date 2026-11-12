@@ -19,6 +19,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Listeners stay attached: they are cheap no-ops once audio is running, and they re-unlock
     // audio if the phone suspends it (calls, backgrounding, iOS "interrupted" state).
     void audio.preload();
+    (window as unknown as { __harmonicCatAudio?: typeof audio }).__harmonicCatAudio = audio; // for the sound check / debugging
     const unlock = () => audio.unlockFromGesture();
     const events = ["pointerdown", "pointerup", "touchend", "click", "keydown"] as const;
     events.forEach((ev) => window.addEventListener(ev, unlock, { capture: true, passive: true }));

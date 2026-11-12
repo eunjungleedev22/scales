@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BarChart3, Ear, FlaskConical, Home, Map, Settings, Shapes, Dumbbell, Minimize2, Loader2, NotebookPen } from "lucide-react";
 import { useUI } from "@/store/ui";
@@ -30,6 +30,7 @@ const NAV: Array<{ href: string; key: DictKey; short?: string; mobile?: boolean;
 
 function AudioPill() {
   const { status } = useAudioState();
+  const tries = useRef(0);
   const { t } = useT();
   if (status === "ready")
     return (
@@ -39,9 +40,10 @@ function AudioPill() {
     );
   return (
     <button
-      onClick={() => {
+      onClick={async () => {
         audio.unlockFromGesture();
-        void audio.init();
+        const ok = await audio.init();
+        if (!ok && tries.current++ >= 1) window.location.href = "/settings#sound-check";
       }}
       className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-primary/60 px-2.5 py-1 font-mono text-[11px] font-medium uppercase tracking-wider text-primary"
     >
