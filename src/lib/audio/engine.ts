@@ -302,7 +302,7 @@ class AudioEngine {
           modulation: { type: "sine" },
           envelope: { attack: 0.002, decay: 1.6, sustain: 0.25, release: 1.1 },
           modulationEnvelope: { attack: 0.002, decay: 0.35, sustain: 0.12, release: 0.6 },
-          volume: -19,
+          volume: -12,
         }).connect(eq),
       );
       this.inst.pad = keep(
@@ -311,7 +311,7 @@ class AudioEngine {
           modulationIndex: 2.5,
           envelope: { attack: 0.08, decay: 2.2, sustain: 0.45, release: 1.4 },
           modulationEnvelope: { attack: 0.05, decay: 0.8, sustain: 0.2, release: 1 },
-          volume: -16,
+          volume: -12,
         }).connect(eq),
       );
       const bassFilter = keep(new Tone.Filter(900, "lowpass").connect(comp));
@@ -330,7 +330,7 @@ class AudioEngine {
           modulationIndex: 3,
           envelope: { attack: 0.004, decay: 0.5, sustain: 0.3, release: 0.4 },
           modulationEnvelope: { attack: 0.004, decay: 0.25, sustain: 0.1, release: 0.3 },
-          volume: -23,
+          volume: -17,
         }).connect(chorus),
       );
     } else if (preset === "analog") {
@@ -340,7 +340,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "fatsawtooth", count: 2, spread: 10 },
           envelope: { attack: 0.01, decay: 0.6, sustain: 0.5, release: 0.8 },
-          volume: -8,
+          volume: -4,
         }).connect(keysFilter),
       );
       const padFilter = keep(new Tone.Filter({ frequency: 1500, type: "lowpass", rolloff: -24 }).connect(chorus));
@@ -376,7 +376,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "custom", partials } as any,
           envelope: { attack: 0.002, decay: 2.2, sustain: 0.0, release: 1.2 },
-          volume: -16,
+          volume: -9,
         }).connect(tone),
       );
       this.inst.pad = keep(
@@ -409,7 +409,7 @@ class AudioEngine {
         new Tone.PolySynth(Tone.Synth, {
           oscillator: { type: "fatsawtooth", count: 2, spread: 14 },
           envelope: { attack: 0.005, decay: 0.35, sustain: 0.35, release: 0.7 },
-          volume: -5,
+          volume: -2,
         }).connect(keysFilter),
       );
       const padFilter = keep(new Tone.Filter(2400, "lowpass").connect(reverb));
