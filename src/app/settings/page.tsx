@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/select";
 import { Kbd } from "@/components/ui/kbd";
 import { BackupCard } from "@/components/settings/BackupCard";
+import { currentUser } from "@/lib/auth/client";
 import { SoundCheck } from "@/components/settings/SoundCheck";
 import { TonePicker } from "@/components/settings/TonePicker";
 import { VoiceoverCard } from "@/components/settings/VoiceoverCard";
@@ -126,6 +127,11 @@ export default function SettingsPage() {
           >
             Reset Lab project
           </Button>
+          {currentUser() && (
+            <p className="w-full text-sm">
+              Signed in as <b className="font-mono text-primary">{currentUser()}</b>. Progress is saved separately for each account.
+            </p>
+          )}
           <Button
             variant="outline"
             onClick={async () => {

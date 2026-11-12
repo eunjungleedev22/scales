@@ -5,10 +5,15 @@ import { useSettings } from "@/store/settings";
 import { useLab } from "@/store/lab";
 import { useUI } from "@/store/ui";
 import { audio } from "@/lib/audio/engine";
+import { storageName } from "@/lib/auth/client";
 
 /** Rehydrates persisted stores on the client and unlocks audio on the first user gesture. */
 export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    // Each account gets its own saved data on this device
+    useSettings.persist.setOptions({ name: storageName("harmonic-cat-settings") });
+    useProgress.persist.setOptions({ name: storageName("harmonic-cat-progress") });
+    useLab.persist.setOptions({ name: storageName("harmonic-cat-lab") });
     Promise.all([useSettings.persist.rehydrate(), useProgress.persist.rehydrate(), useLab.persist.rehydrate()]).finally(() => {
       useUI.getState().setHydrated();
       useProgress.getState().touch();

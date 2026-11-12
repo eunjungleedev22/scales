@@ -10,12 +10,12 @@ function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    setError(false);
+    setError(null);
     try {
       const res = await fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, password }) });
       if (res.ok) {
@@ -23,9 +23,12 @@ function LoginForm() {
         window.location.href = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
         return;
       }
-      setError(true);
+      if (res.status === 429) {
+        const j = await res.json().catch(() => ({}));
+        setError(`Too many attempts. Try again in ${j.retryAfterMinutes ?? 15} minutes.`);
+      } else setError("That didn't match. Try again.");
     } catch {
-      setError(true);
+      setError("Couldn't reach the server. Check your connection.");
     }
     setBusy(false);
   };
@@ -41,7 +44,11 @@ function LoginForm() {
         Password
         <input className={input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
       </label>
-      {error && <p className="text-sm font-bold text-destructive">That didn&apos;t match. Try again.</p>}
+      {error && (
+        <p role="alert" className="text-sm font-bold text-destructive">
+          {error}
+        </p>
+      )}
       <Button type="submit" variant="lime" size="lg" disabled={busy}>
         {busy ? <Loader2 className="animate-spin" /> : <LogIn />} Sign in
       </Button>

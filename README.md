@@ -25,20 +25,27 @@ npm start          # serve the production build
 
 Requires Node 20+ (developed with Node 22). Audio needs one click, tap or keypress before it can start (browser autoplay rules). The header shows a **"Tap for sound"** pill until audio is running. On iPhone, the audio engine is preloaded and started inside the tap itself, and it switches iOS into "playback" mode, so sound works even when the ring/silent switch is set to silent.
 
-## Login and saving your scores
+## Accounts, login and security
 
-There's one built-in account and no sign-up:
+There's no sign-up page. Accounts are listed in `src/lib/auth/users.ts` (current users: `cat`, `bruno`). To add someone:
 
-- **Username:** `cat`
-- **Password:** `kitten-paws-2209`
+```bash
+node scripts/add-user.mjs <username>
+```
 
-Every page asks you to sign in once, and the session lasts a year. Sign out is in Settings. The app holds no sensitive data, so the credentials live in `src/lib/auth/session.ts`. You can override them with the `HC_USERNAME`, `HC_PASSWORD` and `HC_SECRET` environment variables, or turn the login off with `HC_AUTH=off`.
+The script prints a strong random password **once** and a record to paste into `users.ts`. It never stores the password itself.
 
-**Scores, lessons, achievements, settings and the Lab project are saved automatically in the browser** (localStorage) and survive refreshes and restarts. There's no server, so to move them to another device, go to **Settings → Your scores**:
+Security basics:
 
-- **Download backup** saves a `.json` file.
-- **Copy backup code** copies a short text code instead.
-- On the other device, **Restore from file** or paste the code.
+- **No stored passwords.** Each account has a random salt and a verifier: the SHA-256 of a PBKDF2-SHA256 key, 600,000 iterations. The session cookie is httpOnly, Secure and SameSite=Lax, lasts 90 days, and holds a key that can only be derived from the password. Changing a user's record invalidates their sessions.
+- **Brute-force protection.** After 5 failed attempts, the account and the IP are both locked for 15 minutes. Every failure is also delayed by a random 0.4–0.8 s. Unknown usernames take the same time as real ones, so usernames can't be guessed from timing.
+- **Security headers.** The app sends X-Frame-Options and a CSP `frame-ancestors 'none'` (clickjacking), plus `nosniff`, a strict Referrer-Policy, HSTS and a restrictive Permissions-Policy. `X-Powered-By` is removed.
+- **Separate data per account.** Progress, settings and the Lab project are saved per user, even on a shared device.
+- `HC_AUTH=off` disables the login, for local development.
+
+**Scores, lessons, achievements, settings and the Lab project are saved automatically in the browser** (localStorage) and survive refreshes. There's no server, so to move them to another device, use **Settings → Your scores** (download or copy a backup, then restore it on the other device).
+
+Limits: the lockout counter lives in each server instance's memory, and there's no self-service password change.
 
 ## What's inside
 

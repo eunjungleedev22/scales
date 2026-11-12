@@ -6,6 +6,7 @@ import { useProgress } from "@/store/progress";
 import { useSettings } from "@/store/settings";
 import { useLab } from "@/store/lab";
 import { useUI } from "@/store/ui";
+import { storageName } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -19,7 +20,7 @@ export function BackupCard() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const download = () => {
-    const b = createBackup(localStorage);
+    const b = createBackup(localStorage, storageName);
     const blob = new Blob([JSON.stringify(b, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -31,7 +32,7 @@ export function BackupCard() {
   };
 
   const copy = async () => {
-    const c = backupToCode(createBackup(localStorage));
+    const c = backupToCode(createBackup(localStorage, storageName));
     try {
       await navigator.clipboard.writeText(c);
       setCopied(true);
@@ -47,7 +48,7 @@ export function BackupCard() {
       const b = parseBackup(input);
       const summary = summarize(b);
       if (!confirm(`Replace the progress on this device with the backup?\n${summary}`)) return;
-      applyBackup(b, localStorage);
+      applyBackup(b, localStorage, storageName);
       await Promise.all([useProgress.persist.rehydrate(), useSettings.persist.rehydrate(), useLab.persist.rehydrate()]);
       setCode("");
       setMsg({ ok: true, text: `Restored: ${summary}` });

@@ -12,10 +12,14 @@ export interface Backup {
   data: Partial<Record<(typeof BACKUP_KEYS)[number], string>>;
 }
 
-export function createBackup(storage: Pick<Storage, "getItem">): Backup {
+/** Maps logical backup keys to the actual storage keys (namespaced per user). */
+export type KeyMap = (key: (typeof BACKUP_KEYS)[number]) => string;
+const identity: KeyMap = (k) => k;
+
+export function createBackup(storage: Pick<Storage, "getItem">, keyOf: KeyMap = identity): Backup {
   const data: Backup["data"] = {};
   for (const k of BACKUP_KEYS) {
-    const v = storage.getItem(k);
+    const v = storage.getItem(keyOf(k));
     if (v) data[k] = v;
   }
   return { app: "harmonic-cat", version: 1, exportedAt: new Date().toISOString(), data };
@@ -47,8 +51,8 @@ export function parseBackup(input: string): Backup {
   return b;
 }
 
-export function applyBackup(b: Backup, storage: Pick<Storage, "setItem">) {
-  for (const [k, v] of Object.entries(b.data)) if (v) storage.setItem(k, v);
+export function applyBackup(b: Backup, storage: Pick<Storage, "setItem">, keyOf: KeyMap = identity) {
+  for (const [k, v] of Object.entries(b.data)) if (v) storage.setItem(keyOf(k as (typeof BACKUP_KEYS)[number]), v);
 }
 
 /** Compact copy-paste code (base64 of the JSON, Unicode-safe). */
