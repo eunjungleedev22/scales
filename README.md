@@ -23,7 +23,19 @@ npm run build      # production build
 npm start          # serve the production build
 ```
 
-Requires Node 20+ (developed with Node 22). Audio needs one click, tap or keypress before it can start (browser autoplay rules). The header shows a **"Tap to enable sound"** pill until audio is running.
+Requires Node 20+ (developed with Node 22). Audio needs one click, tap or keypress before it can start (browser autoplay rules). The header shows a **"Tap for sound"** pill until audio is running. On iPhone, the audio engine is preloaded and started inside the tap itself, and it switches iOS into "playback" mode, so sound works even when the ring/silent switch is set to silent.
+
+## Optional login (single user)
+
+The site can be locked behind one username and password. There are no sign-up or account pages. Set these environment variables, for example in Vercel → Project → Settings → Environment Variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `HC_USERNAME` | Login username |
+| `HC_PASSWORD` | Login password |
+| `HC_SECRET` | Long random string used to sign the session cookie (optional but recommended) |
+
+When `HC_USERNAME` and `HC_PASSWORD` are set, every page redirects to `/login` until you sign in. The session lasts a year, and you can sign out in Settings. When they aren't set, the login is disabled; this is the default for local development. Credentials are never stored in the repository. Progress is still saved per browser (localStorage) and doesn't sync between devices.
 
 ## What's inside
 

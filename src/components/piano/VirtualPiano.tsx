@@ -171,7 +171,7 @@ export function VirtualPiano({
             {mark === "right" ? "✓" : "✕"}
           </span>
         )}
-        {keyHint && <span className={cn("absolute top-1 text-[9px] opacity-50", black ? "text-white" : "text-[#1a1428]")}>{keyHint}</span>}
+        {keyHint && <span className={cn("absolute top-1 hidden text-[9px] opacity-50 md:inline", black ? "text-white" : "text-[#1a1428]")}>{keyHint}</span>}
         {names && (
           <span className={cn("whitespace-pre text-center leading-tight", filled && !black && "text-[#1a1428]", filled && black && "text-[#1a1428]")}>{labelFor(m)}</span>
         )}
@@ -182,7 +182,7 @@ export function VirtualPiano({
   return (
     <div className={cn("w-full", className)}>
       <div className="no-scrollbar overflow-x-auto rounded-2xl">
-        <div role="group" aria-label={label} className={cn("relative flex", compact ? "h-32 sm:h-36" : "h-40 sm:h-48 md:h-52")} style={{ minWidth: `${whites.length * 25}px` }}>
+        <div role="group" aria-label={label} className={cn("relative flex", compact ? "h-32 sm:h-36" : "h-40 sm:h-48 md:h-52")} style={{ minWidth: compact ? undefined : `${whites.length * 19}px` }}>
           {whites.map((m) => renderKey(m, false, 0))}
           {keys
             .filter((m) => isBlackKey(m))

@@ -125,14 +125,14 @@ export default function LabPage() {
           <h1 className="text-3xl font-black">{t("nav_lab")}</h1>
           <p className="text-muted-foreground">Your project autosaves. Space = play/stop.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
           <Button variant="pink" size="lg" onClick={() => (playing ? audio.stop() : play())}>
             {playing ? <Square /> : <Play />} {playing ? t("stop") : t("play")}
           </Button>
           <Button variant="lime" size="lg" onClick={exportMidi}>
             <Download /> Export MIDI
           </Button>
-          <Button variant="secondary" size="lg" onClick={() => setQuiz({ list: exercisesFromProject(p.tonic, p.scale, chords), i: 0 })}>
+          <Button variant="secondary" size="lg" className="col-span-2" onClick={() => setQuiz({ list: exercisesFromProject(p.tonic, p.scale, chords), i: 0 })}>
             <GraduationCap /> Generate exercises
           </Button>
         </div>

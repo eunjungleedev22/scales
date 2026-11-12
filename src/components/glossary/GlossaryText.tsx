@@ -28,7 +28,7 @@ function Term({ text, entry }: { text: string; entry: GlossaryEntry }) {
         </span>
       </button>
       {open && (
-        <span role="tooltip" lang="ko" className="absolute left-0 top-full z-50 mt-1.5 block w-64 rounded-xl border border-pink/40 bg-card p-2.5 text-left text-xs font-semibold leading-relaxed text-foreground shadow-xl">
+        <span role="tooltip" lang="ko" className="fixed inset-x-4 bottom-24 z-50 block rounded-xl sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-full sm:mt-1.5 sm:w-64 border border-pink/40 bg-card p-2.5 text-left text-xs font-semibold leading-relaxed text-foreground shadow-xl">
           <span className="block font-black text-pink">
             {entry.ko} <span className="font-bold text-muted-foreground">· {entry.terms[0]}</span>
           </span>

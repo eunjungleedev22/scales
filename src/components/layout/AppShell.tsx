@@ -16,13 +16,13 @@ import { useAudioState } from "@/hooks/useAudio";
 import { cn } from "@/lib/utils";
 import type { DictKey } from "@/i18n/dict";
 
-const NAV: Array<{ href: string; key: DictKey; icon: React.ComponentType<{ className?: string }> }> = [
+const NAV: Array<{ href: string; key: DictKey; short?: string; icon: React.ComponentType<{ className?: string }> }> = [
   { href: "/", key: "nav_dashboard", icon: Home },
   { href: "/learn", key: "nav_learn", icon: Map },
   { href: "/practice", key: "nav_practice", icon: Dumbbell },
-  { href: "/ear-training", key: "nav_ear", icon: Ear },
-  { href: "/playground", key: "nav_playground", icon: Shapes },
-  { href: "/lab", key: "nav_lab", icon: FlaskConical },
+  { href: "/ear-training", key: "nav_ear", short: "Ear", icon: Ear },
+  { href: "/playground", key: "nav_playground", short: "Play", icon: Shapes },
+  { href: "/lab", key: "nav_lab", short: "Lab", icon: FlaskConical },
   { href: "/progress", key: "nav_progress", icon: BarChart3 },
   { href: "/settings", key: "nav_settings", icon: Settings },
 ];
@@ -32,9 +32,10 @@ function AudioPill() {
   const { t } = useT();
   if (status === "ready") return <span className="flex items-center gap-1 text-xs text-lime"><Volume2 className="size-3.5" /> <span className="hidden lg:inline">{t("soundOn")}</span></span>;
   return (
-    <button onClick={() => void audio.init()} className="flex items-center gap-1 rounded-full bg-pink/20 px-3 py-1 text-xs font-bold text-pink">
+    <button onClick={() => { audio.unlockFromGesture(); void audio.init(); }} className="flex items-center gap-1 whitespace-nowrap rounded-full bg-pink/20 px-3 py-1 text-xs font-bold text-pink">
       {status === "loading" ? <Loader2 className="size-3.5 animate-spin" /> : <VolumeX className="size-3.5" />}
-      {status === "error" ? t("audioError") : status === "loading" ? t("loadingAudio") : t("tapForSound")}
+      <span className="hidden sm:inline">{status === "error" ? t("audioError") : status === "loading" ? t("loadingAudio") : t("tapForSound")}</span>
+      <span className="sm:hidden">{status === "loading" ? "…" : "Tap for sound"}</span>
     </button>
   );
 }
@@ -45,7 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const setSettings = useSettings((s) => s.set);
   const xp = useProgress((s) => s.xp);
   const pathname = usePathname();
-  const { t } = useT();
+  const { t, lang } = useT();
   const lvl = levelFromXp(xp);
 
   // Stop audio when navigating between pages
@@ -66,6 +67,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
   }, [setSettings]);
+
+  // The login page renders on its own, without navigation
+  if (pathname === "/login") return <>{children}</>;
 
   if (!hydrated) {
     return (
@@ -128,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="flex-1" />
           <AudioPill />
-          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold">
+          <span className="whitespace-nowrap rounded-full bg-secondary px-3 py-1 text-xs font-bold">
             Lv {lvl.level} · <span className="text-lime">{xp} XP</span>
           </span>
           {focus && (
@@ -150,9 +154,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {!focus && (
           <nav aria-label="Main mobile" className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-border bg-background/95 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
             {NAV.filter((n) => !["/progress", "/settings"].includes(n.href)).map((n) => (
-              <Link key={n.href} href={n.href} className={cn("flex flex-col items-center gap-0.5 py-2 text-[10px] font-bold text-muted-foreground", isActive(n.href) && "text-lime")}>
+              <Link key={n.href} href={n.href} className={cn("flex min-w-0 flex-col items-center gap-0.5 py-2 text-[10px] font-bold text-muted-foreground", isActive(n.href) && "text-lime")}>
                 <n.icon className="size-5" />
-                <span className="truncate">{t(n.key).split(" ")[0]}</span>
+                <span className="w-full truncate text-center">{lang === "en" && n.short ? n.short : t(n.key).split(" ")[0]}</span>
               </Link>
             ))}
           </nav>

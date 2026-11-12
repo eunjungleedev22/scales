@@ -423,7 +423,7 @@ function ChoiceBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps) {
         </div>
       )}
       {ex.show && !ex.ear && <VirtualPiano startMidi={48} octaves={2} marks={Object.fromEntries(ex.show.map((m) => [m, "given" as KeyMark]))} />}
-      <div className="grid gap-2 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {ex.options.map((o, i) => {
           const isPicked = picked === i;
           const state = evaluation && isPicked ? (evaluation.correct ? "right" : "wrong") : solved && i === ex.answer ? "right" : null;
@@ -530,7 +530,7 @@ function ProgressionBody({ exercise, onSubmit, evaluation, onRetry }: BodyProps)
           <Play /> {t("play")} <Kbd className="bg-white/20 text-white">Space</Kbd>
         </Button>
       </div>
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         {ex.options.map((d, i) => {
           const c = chords[d - 1];
           const isPicked = picked === i;

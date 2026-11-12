@@ -119,7 +119,7 @@ export function ChordExplorer() {
           {free.length > 0 && <p className="mt-1 text-sm">{[...free].sort((a, b) => a - b).map((m) => pcName(m, preferFlats ? "flat" : "sharp")).join(" ")}</p>}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="rounded-2xl bg-secondary/50 p-4">
             <p className="text-2xl font-black">{chordSymbol(root, type)}</p>
             <p className="text-sm text-muted-foreground">{CHORD_TYPES[type].vibe}</p>

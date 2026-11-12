@@ -61,7 +61,7 @@ export function ScaleExplorer() {
         </Button>
       </div>
       <VirtualPiano startMidi={48} octaves={2} pcMarks={pcMarks} keyboardInput />
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="rounded-2xl bg-secondary/50 p-4">
           <p className="text-sm text-muted-foreground">{def.vibe}</p>
           <div className="mt-3 flex flex-wrap gap-2">

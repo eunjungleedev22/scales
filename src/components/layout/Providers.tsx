@@ -15,13 +15,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
       audio.setVolume(useSettings.getState().volume);
       document.documentElement.lang = useSettings.getState().lang;
     });
-    const unlock = () => {
-      void audio.init();
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
-    };
-    window.addEventListener("pointerdown", unlock);
-    window.addEventListener("keydown", unlock);
+    // Download the audio library right away, then start sound on any tap/click/key.
+    // Listeners stay attached: they are cheap no-ops once audio is running, and they re-unlock
+    // audio if the phone suspends it (calls, backgrounding, iOS "interrupted" state).
+    void audio.preload();
+    const unlock = () => audio.unlockFromGesture();
+    const events = ["pointerdown", "pointerup", "touchend", "click", "keydown"] as const;
+    events.forEach((ev) => window.addEventListener(ev, unlock, { capture: true, passive: true }));
     const unsub = useSettings.subscribe((s) => {
       audio.setVolume(s.volume);
       document.documentElement.lang = s.lang;
@@ -32,8 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     document.addEventListener("visibilitychange", onHide);
     return () => {
       unsub();
-      window.removeEventListener("pointerdown", unlock);
-      window.removeEventListener("keydown", unlock);
+      events.forEach((ev) => window.removeEventListener(ev, unlock, { capture: true }));
       document.removeEventListener("visibilitychange", onHide);
     };
   }, []);

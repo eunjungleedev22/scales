@@ -51,19 +51,19 @@ export default function Dashboard() {
         </div>
       </motion.section>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <QuickCard href="/practice?mode=quick" icon={Dumbbell} title={t("quickPractice")} desc="5 mixed drills from what you've learned. ~3 minutes." color="#c6ff3d" />
         <QuickCard href="/practice?mode=deep" icon={Waves} title={t("deepDive")} desc="Endless adaptive session for long, focused study blocks." color="#a855f7" />
         <QuickCard href="/lab" icon={FlaskConical} title={t("openLab")} desc="Chords, bass, melody, drums — export MIDI to Ableton." color="#ff4fa3" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>{t("skillMastery")}</CardTitle>
             <CardDescription>Mastery grows with first-try answers, not repetition.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {WORLDS.map((w) => {
               const m = worldMastery(w, stats, lessons);
               const c = worldCompletion(w, lessons);

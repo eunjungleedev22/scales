@@ -67,7 +67,7 @@ function PracticeInner() {
         <h1 className="text-3xl font-black">{t("nav_practice")}</h1>
         <p className="text-muted-foreground">Pick anything. Stop anytime. Nothing expires.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ModeCard href="/practice?mode=quick" icon={Dumbbell} title={t("quickPractice")} desc="5 mixed drills, about 3 minutes." color="#c6ff3d" />
         <ModeCard href="/practice?mode=deep" icon={Waves} title={t("deepDive")} desc="Endless adaptive session for 2–4 hour hyperfocus blocks. Timer, optional break nudges, pause anytime." color="#a855f7" />
         <ModeCard href="/practice?mode=review" icon={RefreshCcw} title={t("review")} desc="Optional: revisit exercises you found tricky." color="#36c5ff" />

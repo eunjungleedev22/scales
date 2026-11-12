@@ -72,7 +72,7 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle>{t("shortcuts")}</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
+        <CardContent className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
           {[
             ["A W S E D F T G Y H U J K", "Play piano keys (Ableton layout)"],
             ["Z / X", "Octave down / up"],
@@ -113,6 +113,15 @@ export default function SettingsPage() {
             }}
           >
             Reset Lab project
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              await fetch("/api/logout", { method: "POST" });
+              window.location.href = "/login";
+            }}
+          >
+            Sign out
           </Button>
         </CardContent>
       </Card>

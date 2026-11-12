@@ -54,12 +54,12 @@ export default function ProgressPage() {
                   {Math.round(worldCompletion(w, lessons) * 100)}% complete · {masteryLabel(worldMastery(w, stats, lessons)).label}
                 </p>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {w.lessons.map((l) => {
                   const m = lessonMastery(l, stats, lessons[l.id]);
                   const { paws } = masteryLabel(m);
                   return (
-                    <div key={l.id} className="flex items-center justify-between rounded-xl bg-secondary/50 px-3 py-2 text-sm">
+                    <div key={l.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-secondary/50 px-3 py-2 text-sm">
                       <span className="truncate font-bold">{L(l.title)}</span>
                       <span className="flex shrink-0 gap-0.5">
                         {Array.from({ length: 5 }, (_, k) => (
@@ -82,7 +82,7 @@ export default function ProgressPage() {
             {Object.keys(achievements).length}/{ACHIEVEMENTS.length} unlocked
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ACHIEVEMENTS.map((a) => {
             const got = achievements[a.id];
             return (

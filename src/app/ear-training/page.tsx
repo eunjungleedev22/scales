@@ -85,7 +85,7 @@ export default function EarTrainingPage() {
         <CardDescription>{desc}</CardDescription>
         {extra}
       </CardHeader>
-      <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {modes.map((m) => (
           <button key={m.id} onClick={() => setMode(m)} className="rounded-2xl border-2 border-border bg-secondary/50 p-4 text-left transition-colors hover:border-pink">
             <span className="block font-black">{m.title.split(": ")[1]}</span>

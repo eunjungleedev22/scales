@@ -20,6 +20,31 @@ interface PlayOptions {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/** A tiny silent WAV (used to switch iOS into "playback" mode so the ringer switch doesn't mute sound). */
+const SILENT_WAV = (() => {
+  const samples = 800;
+  const bytes = new Uint8Array(44 + samples);
+  const view = new DataView(bytes.buffer);
+  const w = (o: number, t: string) => [...t].forEach((c, i) => view.setUint8(o + i, c.charCodeAt(0)));
+  w(0, "RIFF");
+  view.setUint32(4, 36 + samples, true);
+  w(8, "WAVE");
+  w(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, 8000, true);
+  view.setUint32(28, 8000, true);
+  view.setUint16(32, 1, true);
+  view.setUint16(34, 8, true); // 8-bit
+  w(36, "data");
+  view.setUint32(40, samples, true);
+  bytes.fill(128, 44); // 8-bit silence
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return `data:audio/wav;base64,${typeof btoa === "function" ? btoa(bin) : ""}`;
+})();
+
 class AudioEngine {
   private Tone: ToneNS | null = null;
   private loadPromise: Promise<ToneNS> | null = null;
@@ -40,22 +65,102 @@ class AudioEngine {
   }
   getSnapshot = () => `${this.status}|${this.playing}`;
 
-  /** Must be called from a user gesture at least once (mobile autoplay policy). */
+  /** Start downloading Tone.js early (no sound yet), so a later tap can start audio instantly. */
+  preload(): Promise<ToneNS> {
+    if (!this.loadPromise) {
+      this.loadPromise = import("tone").then((Tone) => {
+        this.Tone = Tone;
+        const raw = Tone.getContext().rawContext as unknown as BaseAudioContext;
+        raw.addEventListener?.("statechange", () => this.syncStatus());
+        return Tone;
+      });
+    }
+    return this.loadPromise;
+  }
+
+  private contextState(): string {
+    return this.Tone ? (this.Tone.getContext().rawContext as unknown as BaseAudioContext).state : "suspended";
+  }
+
+  private syncStatus() {
+    const running = this.contextState() === "running";
+    const next: AudioStatus = running ? "ready" : this.status === "error" ? "error" : "idle";
+    if (next !== this.status) {
+      this.status = next;
+      this.emit();
+    }
+  }
+
+  private silentEl: HTMLAudioElement | null = null;
+
+  /**
+   * Call synchronously from a user gesture (tap/click/key). Mobile browsers — iOS Safari in particular —
+   * only allow audio to start inside the gesture itself, so nothing here may be awaited first.
+   */
+  unlockFromGesture() {
+    if (typeof window === "undefined") return;
+    // iOS: play through the "playback" audio session so the silent switch doesn't mute Web Audio
+    try {
+      const nav = navigator as Navigator & { audioSession?: { type: string } };
+      if (nav.audioSession) nav.audioSession.type = "playback";
+    } catch {
+      /* not supported */
+    }
+    if (!this.silentEl) {
+      try {
+        this.silentEl = new Audio(SILENT_WAV);
+        this.silentEl.loop = true;
+        this.silentEl.setAttribute("playsinline", "");
+        this.silentEl.volume = 0.01;
+        void this.silentEl.play().catch(() => {
+          this.silentEl = null; // retry on the next gesture
+        });
+      } catch {
+        this.silentEl = null;
+      }
+    }
+    if (!this.Tone) {
+      void this.preload();
+      return;
+    }
+    if (this.contextState() === "running") {
+      if (!this.inst.keys) this.build(this.Tone);
+      this.syncStatus();
+      return;
+    }
+    const raw = this.Tone.getContext().rawContext as unknown as AudioContext;
+    try {
+      void raw.resume();
+      // Classic iOS unlock: play a one-sample silent buffer inside the gesture
+      const buf = raw.createBuffer(1, 1, 22050);
+      const src = raw.createBufferSource();
+      src.buffer = buf;
+      src.connect(raw.destination);
+      src.start(0);
+    } catch {
+      /* ignore */
+    }
+    if (!this.inst.keys) this.build(this.Tone);
+    setTimeout(() => this.syncStatus(), 50);
+  }
+
+  /** Make sure audio is loaded and running. Never hangs: resolves false if the browser still blocks sound. */
   async init(): Promise<boolean> {
     try {
-      if (!this.loadPromise) {
-        this.status = "loading";
-        this.emit();
-        this.loadPromise = import("tone");
+      if (!this.Tone) {
+        if (this.status !== "loading") {
+          this.status = "loading";
+          this.emit();
+        }
+        await this.preload();
       }
-      const Tone = await this.loadPromise;
-      this.Tone = Tone;
-      if (Tone.getContext().state !== "running") await Tone.start();
+      const Tone = this.Tone!;
+      if (this.contextState() !== "running") {
+        await Promise.race([Tone.start(), new Promise((r) => setTimeout(r, 400))]);
+      }
       if (!this.inst.keys) this.build(Tone);
-      this.status = "ready";
-      this.error = null;
-      this.emit();
-      return true;
+      this.syncStatus();
+      return this.contextState() === "running";
     } catch (e) {
       this.status = "error";
       this.error = e instanceof Error ? e.message : String(e);
