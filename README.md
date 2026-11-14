@@ -93,6 +93,18 @@ Every lesson has a small **Notebook** under its intro video. It's also available
   ```
 
   The model comes from `onnx-community/Kokoro-82M-v1.0-ONNX` on Hugging Face. A test fails if any narrated sentence has no recording.
+- **Teaching approach.** Many intros adapt ideas from *Working in Harmony*, a free textbook by Gabriel Fankhauser, licensed CC BY 4.0 (https://faculty.ung.edu/gfankhauser/). The ideas used are:
+  - scale-degree names and tendencies
+  - the two-step interval method (count letters for the number, then compare with the bottom note's major scale)
+  - consonance tiers
+  - minor as major with ♭3, ♭6 and ♭7, and harmonic minor's leading tone
+  - voice-leading rules
+  - "leading tones resolve up, sevenths resolve down"
+  - the five cadences
+  - seventh-chord qualities
+  - embellishing tones
+
+  The wording is our own. Each related lesson links to the matching chapter under **Go deeper** (`src/content/references.ts`).
 - **Scripts.** Every lesson has a hand-written intro. Each scene shows one big key idea, with a spoken explanation, piano visuals and sound, and the intro ends with a **Remember** recap.
 - **Intro "video" for every lesson.** Before the exercises, each lesson has a short animated intro with captions, highlighted piano keys, step and interval labels (W/H, R/3/5…) and sound. You can play or pause it, skip between scenes, and reopen it mid-lesson with the **Intro** button. Scripts live in `src/content/intros.ts`. 26 lessons have hand-written scripts, and the rest are generated from the lesson's concept and demo. All of it is original content, so there are no licensing issues.
 - **More on YouTube.** Each lesson links to a YouTube *search* for its topic. No third-party videos are embedded or rehosted.

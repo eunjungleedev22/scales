@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen, Volume2, Star } from "lucide-react";
+import { ArrowRight, Crown, FlaskConical, Map, Play, RotateCcw, SkipForward, Tv, X, MonitorPlay, NotebookPen, Volume2, Star, BookOpen } from "lucide-react";
 import type { Lesson } from "@/content/curriculum";
 import { getWorld, nextLesson } from "@/content/curriculum";
 import { instantiate } from "@/lib/exercises/instantiate";
@@ -21,6 +21,7 @@ import { LessonNotebook, NotebookContext } from "@/components/notes/LessonNotebo
 import type { IntroScene } from "@/content/intros";
 import { GlossaryText, KeyTerms } from "@/components/glossary/GlossaryText";
 import { introFor, youtubeSearchUrl } from "@/content/intros";
+import { BOOK, READINGS } from "@/content/references";
 import { termsIn } from "@/content/glossary";
 import { loc } from "@/lib/exercises/types";
 import { primeSpeech, speechSupported } from "@/lib/audio/speech";
@@ -220,6 +221,17 @@ export function LessonRunner({ lesson }: { lesson: Lesson }) {
               <span className="font-black text-pink">🎛️ {t("inTheStudio")}: </span>
               <GlossaryText text={lesson.production} />
             </p>
+          )}
+          {READINGS[lesson.id] && (
+            <a href={READINGS[lesson.id].url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 text-sm font-bold text-muted-foreground hover:text-foreground">
+              <BookOpen className="mt-0.5 size-4 shrink-0 text-lime" />
+              <span>
+                Go deeper: <i>{BOOK.title}</i>, {READINGS[lesson.id].chapter} ↗
+                <span className="block text-xs font-normal">
+                  Free textbook by {BOOK.author} ({BOOK.license}). This lesson's intro draws on its approach.
+                </span>
+              </span>
+            </a>
           )}
           <a href={youtubeSearchUrl(ytQuery)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground">
             <MonitorPlay className="size-4 text-[#ff4d3d]" /> More video lessons on YouTube: “{ytQuery}” ↗

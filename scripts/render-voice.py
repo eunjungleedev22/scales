@@ -3,10 +3,11 @@
 Pre-record the app's narration with Kokoro-82M (Apache-2.0), voice af_heart.
 
   npx tsx scripts/export-narration.ts > narration.json
-  python3 scripts/render-voice.py narration.json <kokoro model.onnx> <voices.npz> public/voice
+  python3 scripts/render-voice.py narration.json <kokoro model.onnx> <voices.npz> public/voice [--prune]
 
 Writes public/voice/<key>.mp3 (mono, loudness-normalised) and public/voice/manifest.json.
 Requires: pip install kokoro-onnx soundfile ; ffmpeg on PATH. Only renders missing files.
+--prune deletes recordings that are no longer narrated.
 """
 import json, os, re, subprocess, sys, tempfile
 
@@ -61,6 +62,14 @@ def main():
         if i % 10 == 0:
             json.dump(manifest, open(manifest_path, "w"))
             print(f"{i + 1}/{len(lines)}", flush=True)
+    if "--prune" in sys.argv:
+        wanted = {line["key"] for line in lines}
+        for key in [k for k in manifest if k not in wanted]:
+            manifest.pop(key)
+            try:
+                os.remove(os.path.join(out, f"{key}.mp3"))
+            except FileNotFoundError:
+                pass
     json.dump(manifest, open(manifest_path, "w"), sort_keys=True)
     print("done", len(manifest))
 

@@ -31,3 +31,13 @@ describe("intro scripts", () => {
     }
   });
 });
+
+import { READINGS } from "./references";
+describe("Go deeper readings", () => {
+  it("only reference real lessons and point to the textbook PDFs", () => {
+    for (const [id, r] of Object.entries(READINGS)) {
+      expect(getLesson(id), id).toBeDefined();
+      expect(r.url).toMatch(/^https:\/\/faculty\.ung\.edu\/gfankhauser\/index\.fld\/Fankhauser%20-%20Harmony%20\d%20August%202026\.pdf(#page=\d+)?$/);
+    }
+  });
+});
